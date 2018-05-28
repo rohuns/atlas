@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 import utils
 from data_batcher import SliceBatchGenerator
-from modules import ConvEncoder, DeconvDecoder, UNet
+from modules import ConvEncoder, DeconvDecoder, UNetEncoder, UNetDecoder
 
 
 class ATLASModel(object):
@@ -564,7 +564,7 @@ class ZeroATLASModel(ATLASModel):
                                       name="predicted_masks")
 
 
-class UNetATLASModel(ATLASModel):
+class UNet(ATLASModel):
   def __init__(self, FLAGS):
     """
     Initializes the U-Net ATLAS model, which predicts 0 for the entire mask
@@ -577,12 +577,22 @@ class UNetATLASModel(ATLASModel):
 
   def build_graph(self):
     assert(self.input_dims == self.inputs_op.get_shape().as_list()[1:])
-    unet = UNet(input_shape=self.input_dims,
-                keep_prob=self.keep_prob,
-                output_shape=self.input_dims,
-                scope_name="unet")
+    encoder = UNetEncoder(input_shape=self.input_dims,
+                          keep_prob=self.keep_prob,
+                          scope_name="UNetEncoder")
+
+    encoder_hiddens_op = encoder.build_graph(tf.expand_dims(self.inputs_op, 3))
+    decoder = UNetDecoder(keep_prob=self.keep_prob,
+                            output_shape=self.input_dims,
+                            scope_name="UNetDecoder")
+
+
+    # unet = UNet(input_shape=self.input_dims,
+    #             keep_prob=self.keep_prob,
+    #             output_shape=self.input_dims,
+    #             scope_name="unet")
     self.logits_op = tf.squeeze(
-      unet.build_graph(tf.expand_dims(self.inputs_op, 3)), axis=3)
+      decoder.build_graph(encoder_hiddens_op), axis=3)
 
     self.predicted_mask_probs_op = tf.sigmoid(self.logits_op,
                                               name="predicted_mask_probs")

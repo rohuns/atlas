@@ -673,95 +673,97 @@ class CascadeATLASModel(ATLASModel):
       loss = weighted_ce_with_logits(logits=self.logits_op_1,
                                      targets=self.target_masks_op,
                                      pos_weight=100.0,
-                                     name="ce") + weighted_ce_with_logits(logits=self.logits_op,
-                                      targets=self.target_masks_op,
-                                      pos_weight=1/100.0,
-                                      name="ce2")
+                                     name="ce")
+
+                                      # + weighted_ce_with_logits(logits=self.logits_op,
+                                      # targets=self.target_masks_op,
+                                      # pos_weight=1/100.0,
+                                      # name="ce2")
 
       self.loss = tf.reduce_mean(loss)  # scalar mean across batch
 
       # Adds a summary to write loss to TensorBoard
       tf.summary.scalar("loss", self.loss)
 
-class CascadeATLASModel2(ATLASModel):
-  def __init__(self, FLAGS):
-    super().__init__(FLAGS)
+# class CascadeATLASModel2(ATLASModel):
+#   def __init__(self, FLAGS):
+#     super().__init__(FLAGS)
 
-  def build_graph(self):
-    """
-    Builds the main part of the graph for the model.
+#   def build_graph(self):
+#     """
+#     Builds the main part of the graph for the model.
 
-    Defines:
-    - self.logits_op: A Tensor of the same shape as self.inputs_op and
-      self.target_masks_op e.g. (100, 233, 197) that represents the unscaled
-      logits.
-    - self.predicted_mask_probs_op: A Tensor of the same shape as
-      self.logits_op e.g. (100, 233, 197), and passed through a sigmoid layer.
-    - self.predicted_masks_op: A Tensor of the same shape as self.logits_op
-      e.g. (100, 233, 197) of 0s and 1s.
-    """
-    assert(self.input_dims == self.inputs_op.get_shape().as_list()[1:])
-    encoder = ConvEncoder(input_shape=self.input_dims,
-                          keep_prob=self.keep_prob,
-                          scope_name="encoder1")
-    encoder_hiddens_op = encoder.build_graph(tf.expand_dims(self.inputs_op, 3))
-    decoder = DeconvDecoder(keep_prob=self.keep_prob,
-                            output_shape=self.input_dims,
-                            scope_name="decoder1")
-    # Only squeezes the last dimension (do not squeeze the batch dimension)
-    self.logits_op = tf.squeeze(decoder.build_graph(encoder_hiddens_op), axis=3)
-    self.predicted_mask_probs_op = tf.sigmoid(self.logits_op,
-                                              name="predicted_mask_probs1")
-    self.predicted_masks_op = tf.cast(self.predicted_mask_probs_op > 0.5,
-                                      dtype=tf.uint8,
-                                      name="predicted_masks1")
-    self.inputs_op_1 = tf.boolean_mask(tf.expand_dims(self.inputs_op, 3),self.predicted_masks_op)
+#     Defines:
+#     - self.logits_op: A Tensor of the same shape as self.inputs_op and
+#       self.target_masks_op e.g. (100, 233, 197) that represents the unscaled
+#       logits.
+#     - self.predicted_mask_probs_op: A Tensor of the same shape as
+#       self.logits_op e.g. (100, 233, 197), and passed through a sigmoid layer.
+#     - self.predicted_masks_op: A Tensor of the same shape as self.logits_op
+#       e.g. (100, 233, 197) of 0s and 1s.
+#     """
+#     assert(self.input_dims == self.inputs_op.get_shape().as_list()[1:])
+#     encoder = ConvEncoder(input_shape=self.input_dims,
+#                           keep_prob=self.keep_prob,
+#                           scope_name="encoder1")
+#     encoder_hiddens_op = encoder.build_graph(tf.expand_dims(self.inputs_op, 3))
+#     decoder = DeconvDecoder(keep_prob=self.keep_prob,
+#                             output_shape=self.input_dims,
+#                             scope_name="decoder1")
+#     # Only squeezes the last dimension (do not squeeze the batch dimension)
+#     self.logits_op = tf.squeeze(decoder.build_graph(encoder_hiddens_op), axis=3)
+#     self.predicted_mask_probs_op = tf.sigmoid(self.logits_op,
+#                                               name="predicted_mask_probs1")
+#     self.predicted_masks_op = tf.cast(self.predicted_mask_probs_op > 0.5,
+#                                       dtype=tf.uint8,
+#                                       name="predicted_masks1")
+#     self.inputs_op_1 = tf.boolean_mask(tf.expand_dims(self.inputs_op, 3),self.predicted_masks_op)
     
-    encoder_2 = ConvEncoder(input_shape=self.input_dims,
-                          keep_prob=self.keep_prob,
-                          scope_name="encoder2")
-    encoder_hiddens_op_2 = encoder_2.build_graph(tf.expand_dims(self.inputs_op_1, 3))
-    decoder_2 = DeconvDecoder(keep_prob=self.keep_prob,
-                            output_shape=self.input_dims,
-                            scope_name="decoder2")
-    # Only squeezes the last dimension (do not squeeze the batch dimension)
-    self.logits_op_2 = tf.squeeze(decoder_2.build_graph(encoder_hiddens_op_2), axis=3)
-    self.predicted_mask_probs_op_2 = tf.sigmoid(self.logits_op_2,
-                                              name="predicted_mask_probs")
-    self.predicted_masks_op_2 = tf.cast(self.predicted_mask_probs_op_2 > 0.5,
-                                      dtype=tf.uint8,
-                                      name="predicted_masks")
+#     encoder_2 = ConvEncoder(input_shape=self.input_dims,
+#                           keep_prob=self.keep_prob,
+#                           scope_name="encoder2")
+#     encoder_hiddens_op_2 = encoder_2.build_graph(tf.expand_dims(self.inputs_op_1, 3))
+#     decoder_2 = DeconvDecoder(keep_prob=self.keep_prob,
+#                             output_shape=self.input_dims,
+#                             scope_name="decoder2")
+#     # Only squeezes the last dimension (do not squeeze the batch dimension)
+#     self.logits_op_2 = tf.squeeze(decoder_2.build_graph(encoder_hiddens_op_2), axis=3)
+#     self.predicted_mask_probs_op_2 = tf.sigmoid(self.logits_op_2,
+#                                               name="predicted_mask_probs")
+#     self.predicted_masks_op_2 = tf.cast(self.predicted_mask_probs_op_2 > 0.5,
+#                                       dtype=tf.uint8,
+#                                       name="predicted_masks")
 
 
-  # def add_loss(self):
-  #   """
-  #   Adds loss computation to the graph.
+#   # def add_loss(self):
+#   #   """
+#   #   Adds loss computation to the graph.
 
-  #   Defines:
-  #   - self.loss: A scalar Tensor that represents the loss; applies sigmoid
-  #     cross entropy to {self.logits_op}; {self.logits_op} contains unscaled
-  #     logits e.g. [-4.4, 1.3, -1.6, 3.5, 2.3, ...]. This particular set of
-  #     logits incurs a high loss for {self.target_masks_op} [1, 0, 1, 0, ...]
-  #     and low loss for [0, 1, 0, 1, 1].
-  #   """
-  #   with tf.variable_scope("loss"):
-  #     # sigmoid_ce_with_logits = tf.nn.sigmoid_cross_entropy_with_logits
-  #     # # {loss} is the same shape as {self.logits_op} and {self.target_masks_op}
-  #     # loss = sigmoid_ce_with_logits(logits=self.logits_op,
-  #     #                               labels=self.target_masks_op,
-  #     #                               name="ce")
+#   #   Defines:
+#   #   - self.loss: A scalar Tensor that represents the loss; applies sigmoid
+#   #     cross entropy to {self.logits_op}; {self.logits_op} contains unscaled
+#   #     logits e.g. [-4.4, 1.3, -1.6, 3.5, 2.3, ...]. This particular set of
+#   #     logits incurs a high loss for {self.target_masks_op} [1, 0, 1, 0, ...]
+#   #     and low loss for [0, 1, 0, 1, 1].
+#   #   """
+#   #   with tf.variable_scope("loss"):
+#   #     # sigmoid_ce_with_logits = tf.nn.sigmoid_cross_entropy_with_logits
+#   #     # # {loss} is the same shape as {self.logits_op} and {self.target_masks_op}
+#   #     # loss = sigmoid_ce_with_logits(logits=self.logits_op,
+#   #     #                               labels=self.target_masks_op,
+#   #     #                               name="ce")
 
-  #     weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
-  #     loss = weighted_ce_with_logits(logits=self.logits_op,
-  #                                    targets=self.target_masks_op,
-  #                                    pos_weight=100.0,
-  #                                    name="ce") 
-  #     # + weighted_ce_with_logits(logits=self.logits_op,
-  #     #                                 targets=self.target_masks_op,
-  #     #                                 pos_weight=1/100.0,
-  #     #                                 name="ce2")
+#   #     weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
+#   #     loss = weighted_ce_with_logits(logits=self.logits_op,
+#   #                                    targets=self.target_masks_op,
+#   #                                    pos_weight=100.0,
+#   #                                    name="ce") 
+#   #     # + weighted_ce_with_logits(logits=self.logits_op,
+#   #     #                                 targets=self.target_masks_op,
+#   #     #                                 pos_weight=1/100.0,
+#   #     #                                 name="ce2")
 
-  #     self.loss = tf.reduce_mean(loss)  # scalar mean across batch
+#   #     self.loss = tf.reduce_mean(loss)  # scalar mean across batch
 
-  #     # Adds a summary to write loss to TensorBoard
-  #     tf.summary.scalar("loss", self.loss)
+#   #     # Adds a summary to write loss to TensorBoard
+#   #     tf.summary.scalar("loss", self.loss)

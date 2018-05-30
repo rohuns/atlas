@@ -671,7 +671,7 @@ class CascadeATLASModel(ATLASModel):
       #                               name="ce")
 
       weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
-      loss = weighted_ce_with_logits(logits=self.logits_op_1,
+      loss = weighted_ce_with_logits(logits=self.logits_op,
                                      targets=self.target_masks_op,
                                      pos_weight=100.0,
                                      name="ce")

@@ -256,6 +256,7 @@ def setup_train_dev_split(FLAGS):
 
     slice_paths = glob.glob(os.path.join(prefix, input_paths_regex),
                             recursive=True)
+    
     random.shuffle(slice_paths)
     input_paths = train_input_paths
     if FLAGS.input_regex == None:
@@ -299,6 +300,7 @@ def setup_train_dev_split(FLAGS):
 
   logging.info(f"Split contains {len(train_input_paths)} training examples...")
   logging.info(f"Split contains {len(dev_input_paths)} dev examples...")
+
 
   return (
     train_input_paths,

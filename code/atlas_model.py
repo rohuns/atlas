@@ -372,7 +372,7 @@ class ATLASModel(object):
     sbg = SliceBatchGenerator(input_paths,
                               target_mask_paths,
                               self.FLAGS.batch_size,
-                              num_samples = self.FLAGS.num_samples,
+                              #num_samples = self.FLAGS.train_num_samples,
                               shape=(self.FLAGS.slice_height,
                                      self.FLAGS.slice_width),
                               use_fake_target_masks=self.FLAGS.use_fake_target_masks)
@@ -460,6 +460,7 @@ class ATLASModel(object):
                                 self.FLAGS.batch_size,
                                 shape=(self.FLAGS.slice_height,
                                        self.FLAGS.slice_width),
+                                num_samples = self.FLAGS.train_num_samples,
                                 use_fake_target_masks=self.FLAGS.use_fake_target_masks)
       num_epochs_str = str(num_epochs) if num_epochs != None else "indefinite"
       for batch in tqdm(sbg.get_batch(),

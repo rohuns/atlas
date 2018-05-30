@@ -94,7 +94,7 @@ tf.app.flags.DEFINE_string("train_dir", "",
                            "Sets the dir to which checkpoints and logs will "
                            "be saved. Defaults to "
                            "experiments/{experiment_name}.")
-tf.app.flags.DEFINE_integer("num_samples", None,
+tf.app.flags.DEFINE_integer("train_num_samples", None,
                             "Sets the number of samples to be used for "
                             "training one epoch. None means train on "
                             "entire training set.")

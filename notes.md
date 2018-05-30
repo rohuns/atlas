@@ -109,7 +109,7 @@ train_loss_data %>%
   )
 ```
 
-![](milestone_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](notes_files/figure-markdown_github/unnamed-chunk-3-1.png)
 
 ``` r
 dev_loss_data %>% 
@@ -123,7 +123,7 @@ dev_loss_data %>%
   )
 ```
 
-![](milestone_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](notes_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
 ``` r
 dice_data %>% 
@@ -138,7 +138,7 @@ dice_data %>%
   )
 ```
 
-![](milestone_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](notes_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 Metadata
 --------
@@ -227,4 +227,4 @@ metadata %>%
   )
 ```
 
-![](milestone_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](notes_files/figure-markdown_github/unnamed-chunk-8-1.png)

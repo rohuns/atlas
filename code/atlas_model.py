@@ -387,6 +387,7 @@ class ATLASModel(object):
                 input_path,
                 target_mask_path_list) in enumerate(zipped_masks):
         dice_coefficient = utils.dice_coefficient(predicted_mask, target_mask)
+        
         if dice_coefficient >= 0.0:
           dice_coefficient_total += dice_coefficient
           num_examples += 1
@@ -510,7 +511,8 @@ class ATLASModel(object):
           train_dice = self.calculate_dice_coefficient(sess,
                                                        train_input_paths,
                                                        train_target_mask_paths,
-                                                       "train")
+                                                       "train",
+                                                       plot=True)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"train dice_coefficient: {train_dice}")
@@ -714,11 +716,12 @@ class CascadeATLASModel2(ATLASModel):
     self.predicted_masks_op_1 = tf.cast(self.predicted_mask_probs_op_1 > 0.5,
                                       dtype=tf.uint8,
                                       name="predicted_masks1")
-
+    self.inputs_op_1 = tf.boolean_mask(tf.expand_dims(self.inputs_op, 3),self.predicted_masks_op_1)
+    
     encoder_2 = ConvEncoder(input_shape=self.input_dims,
                           keep_prob=self.keep_prob,
                           scope_name="encoder2")
-    encoder_hiddens_op_2 = encoder_2.build_graph(tf.expand_dims(self.predicted_mask_probs_op_1, 3))
+    encoder_hiddens_op_2 = encoder_2.build_graph(tf.expand_dims(self.inputs_op_1, 3))
     decoder_2 = DeconvDecoder(keep_prob=self.keep_prob,
                             output_shape=self.input_dims,
                             scope_name="decoder2")

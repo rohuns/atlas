@@ -635,11 +635,14 @@ class CascadeATLASModel(ATLASModel):
                                       dtype=tf.uint8,
                                       name="predicted_masks1")
 
-    self.inputs_op_1 = tf.boolean_mask(tf.expand_dims(self.inputs_op, 3),self.predicted_masks_op_1)
+    self.inputs_op_1 = tf.boolean_mask(tf.expand_dims(self.inputs_op, 3), self.predicted_masks_op_1)
+    print("actual: ", self.inputs_op_1.get_shape().as_list()[1:])
+    print("want: ", self.input_dims)
+    assert(self.input_dims == self.inputs_op_1.get_shape().as_list()[1:])
     encoder_2 = ConvEncoder(input_shape=self.input_dims,
                           keep_prob=self.keep_prob,
                           scope_name="encoder2")
-    encoder_hiddens_op_2 = encoder_2.build_graph(tf.expand_dims(self.inputs_op_1, 3))
+    encoder_hiddens_op_2 = encoder_2.build_graph(self.inputs_op_1)
     decoder_2 = DeconvDecoder(keep_prob=self.keep_prob,
                             output_shape=self.input_dims,
                             scope_name="decoder2")

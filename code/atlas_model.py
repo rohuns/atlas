@@ -733,34 +733,35 @@ class CascadeATLASModel2(ATLASModel):
                                       name="predicted_masks")
 
 
-  def add_loss(self):
-    """
-    Adds loss computation to the graph.
+  # def add_loss(self):
+  #   """
+  #   Adds loss computation to the graph.
 
-    Defines:
-    - self.loss: A scalar Tensor that represents the loss; applies sigmoid
-      cross entropy to {self.logits_op}; {self.logits_op} contains unscaled
-      logits e.g. [-4.4, 1.3, -1.6, 3.5, 2.3, ...]. This particular set of
-      logits incurs a high loss for {self.target_masks_op} [1, 0, 1, 0, ...]
-      and low loss for [0, 1, 0, 1, 1].
-    """
-    with tf.variable_scope("loss"):
-      # sigmoid_ce_with_logits = tf.nn.sigmoid_cross_entropy_with_logits
-      # # {loss} is the same shape as {self.logits_op} and {self.target_masks_op}
-      # loss = sigmoid_ce_with_logits(logits=self.logits_op,
-      #                               labels=self.target_masks_op,
-      #                               name="ce")
+  #   Defines:
+  #   - self.loss: A scalar Tensor that represents the loss; applies sigmoid
+  #     cross entropy to {self.logits_op}; {self.logits_op} contains unscaled
+  #     logits e.g. [-4.4, 1.3, -1.6, 3.5, 2.3, ...]. This particular set of
+  #     logits incurs a high loss for {self.target_masks_op} [1, 0, 1, 0, ...]
+  #     and low loss for [0, 1, 0, 1, 1].
+  #   """
+  #   with tf.variable_scope("loss"):
+  #     # sigmoid_ce_with_logits = tf.nn.sigmoid_cross_entropy_with_logits
+  #     # # {loss} is the same shape as {self.logits_op} and {self.target_masks_op}
+  #     # loss = sigmoid_ce_with_logits(logits=self.logits_op,
+  #     #                               labels=self.target_masks_op,
+  #     #                               name="ce")
 
-      weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
-      loss = weighted_ce_with_logits(logits=self.logits_op_1,
-                                     targets=self.target_masks_op,
-                                     pos_weight=100.0,
-                                     name="ce") + weighted_ce_with_logits(logits=self.logits_op,
-                                      targets=self.target_masks_op,
-                                      pos_weight=1/100.0,
-                                      name="ce2")
+  #     weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
+  #     loss = weighted_ce_with_logits(logits=self.logits_op,
+  #                                    targets=self.target_masks_op,
+  #                                    pos_weight=100.0,
+  #                                    name="ce") 
+  #     # + weighted_ce_with_logits(logits=self.logits_op,
+  #     #                                 targets=self.target_masks_op,
+  #     #                                 pos_weight=1/100.0,
+  #     #                                 name="ce2")
 
-      self.loss = tf.reduce_mean(loss)  # scalar mean across batch
+  #     self.loss = tf.reduce_mean(loss)  # scalar mean across batch
 
-      # Adds a summary to write loss to TensorBoard
-      tf.summary.scalar("loss", self.loss)
+  #     # Adds a summary to write loss to TensorBoard
+  #     tf.summary.scalar("loss", self.loss)

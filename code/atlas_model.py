@@ -369,6 +369,8 @@ class ATLASModel(object):
     dice_coefficient_total = 0.
     num_examples = 0
 
+    print (self.FLAGS.overfit)
+
     sbg = SliceBatchGenerator(input_paths,
                               target_mask_paths,
                               self.FLAGS.batch_size,
@@ -434,6 +436,7 @@ class ATLASModel(object):
     - {train,dev}_{input_paths,target_mask_paths}: A list of Python strs
       that represent pathnames to input image files and target mask files.
     """
+    print ('dont you dare start trainin')
     params = tf.trainable_variables()
     num_params = sum(map(lambda t: np.prod(tf.shape(t.value()).eval()), params))
 
@@ -459,7 +462,8 @@ class ATLASModel(object):
                                 self.FLAGS.batch_size,
                                 shape=(self.FLAGS.slice_height,
                                        self.FLAGS.slice_width),
-                                use_fake_target_masks=self.FLAGS.use_fake_target_masks)
+                                use_fake_target_masks=self.FLAGS.use_fake_target_masks,
+                                num_samples=self.FLAGS.overfit)
       num_epochs_str = str(num_epochs) if num_epochs != None else "indefinite"
       for batch in tqdm(sbg.get_batch(),
                         desc=f"Epoch {epoch}/{num_epochs_str}",

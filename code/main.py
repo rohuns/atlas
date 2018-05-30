@@ -107,8 +107,10 @@ tf.app.flags.DEFINE_string("model_name", "ATLASModel",
                            "atlas_model.py.")
 tf.app.flags.DEFINE_integer("slice_height", 232, "Sets the image height.")
 tf.app.flags.DEFINE_integer("slice_width", 196, "Sets the image width.")
+tf.app.flags.DEFINE_integer("overfit", None , "Sets to lower train sample to overfit")
 
 FLAGS = tf.app.flags.FLAGS
+print (FLAGS.overfit)
 os.environ["CUDA_VISIBLE_DEVICES"] = str(FLAGS.gpu)
 
 
@@ -189,6 +191,8 @@ def main(_):
       initialize_model(sess, atlas_model, FLAGS.train_dir, expect_exists=False)
 
       # Trains the model
+      print("starting the training")
+      print(FLAGS.split_type)
       atlas_model.train(sess, *setup_train_dev_split(FLAGS))
   elif FLAGS.mode == "eval":
     with tf.Session(config=config) as sess:

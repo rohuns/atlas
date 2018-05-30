@@ -1,0 +1,151 @@
+---
+title: "231N Final Project Notes"
+author: "Samantha Robertson & Rohun Saxena"
+date: 2018-05-30
+output: 
+  github_document:
+    toc: true
+    toc_depth: 6
+---
+
+```{r setup, include=FALSE}
+# knitr options
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+# Libraries
+library(tidyverse)
+
+# METADATA =====================================================================
+file_metadata = "~/ATLAS_R1.1/ATLAS_Meta-Data_Release_1.1_standard_mni.csv"
+# ==============================================================================
+
+# BASELINE =====================================================================
+file_atlas <- "~/Desktop/log.txt" # Baseline ATLAS model - Dice 0.26?
+file_unet <- "~/Desktop/log-1.txt" # Baseline UNet - Dice 0.06
+# ==============================================================================
+
+# CASCADED MODEL ===============================================================
+file_cascade_1 <- "~/Desktop/231N/cascadelog.txt" # First attempt. Loss is going
+# down but very quickly at the start and is then stuck. Dice 0
+# ==============================================================================
+```
+
+## Cascaded Model: Notes
+
+* First attempt: one ATLAS Model immediately feeds into another ATLAS model. First has loss wce with weight=100, second has wce with weight=1/100. Loss looks ass. Dice coefficient 0
+
+  * 1) Figure out if Dice Coeff broken.
+  * 2) Train two separate models to (1) see if they work alone and (2) see if a different cascade works
+
+```{r}
+file <- file_cascade_1
+
+data <- 
+  file %>% 
+  read_csv(
+    skip = 3,
+    col_names = FALSE
+  )
+
+train_loss_data <- 
+  data %>% 
+  filter(
+    str_detect(X1, "INFO:root:epoch"),
+    str_detect(X3, "^loss "),
+    !(is.na(X3))
+  ) %>% 
+  transmute(
+    iter = as.integer(str_extract(X2, "\\d+")),
+    loss = as.double(str_extract(X3, "\\d.\\d+"))
+  )
+
+dev_loss_data <- 
+  data %>% 
+  filter(
+    str_detect(X3, "dev_loss")
+  ) %>% 
+  transmute(
+    iter = as.integer(str_extract(X2, "\\d+")),
+    loss = as.double(str_extract(X3, "\\d.\\d+"))
+  )
+
+dice_data <- 
+  data %>% 
+  filter(
+    str_detect(X3, "dice_coefficient")
+  ) %>%
+  transmute(
+    data = str_extract(X3, "^[^ ]+"),
+    iter = as.integer(str_extract(X2, "\\d+")),
+    dice = as.double(str_extract(X3, "\\d.\\d+"))
+  )
+```
+
+```{r}
+train_loss_data %>% 
+  ggplot(aes(iter, loss)) +
+  geom_line() +
+  labs(
+    x = "Iterations",
+    y = "Loss",
+    title = "Training Loss"
+  )
+```
+
+```{r}
+dev_loss_data %>% 
+  ggplot(aes(iter, loss)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    x = "Iteration",
+    y = "Loss",
+    title = "Dev Loss"
+  )
+```
+
+```{r}
+dice_data %>% 
+  ggplot(aes(iter, dice, color = data)) +
+  geom_line(aes(group = data)) +
+  geom_point() +
+  labs(
+    x = "Iteration",
+    y = "Dice Coefficient",
+    title = "Evaluation",
+    color = "Dataset"
+  )
+```
+
+## Metadata
+```{r}
+metadata <-
+  file_metadata %>% 
+  read_csv() %>% 
+  rename_all(funs(str_to_lower(str_replace_all(., "[ ]+", "_"))))
+```
+
+```{r}
+summary(metadata)
+```
+```{r}
+metadata %>% 
+  count(primary_stroke_location_hemisphere) %>% 
+  mutate(
+    primary_stroke_location_hemisphere = factor(
+      primary_stroke_location_hemisphere, 
+      levels = c("Left", "Right", "Brainstem", "Bilateral"), 
+      ordered = TRUE
+    )
+  ) %>% 
+  ggplot(aes(primary_stroke_location_hemisphere, n)) +
+  geom_col() +
+  labs(
+    x = "Primary stroke location (hemisphere)",
+    y = "Number of Brains"
+  )
+```
+
+

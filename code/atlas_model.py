@@ -639,7 +639,7 @@ class CascadeATLASModel(ATLASModel):
     encoder_2 = ConvEncoder(input_shape=self.input_dims,
                           keep_prob=self.keep_prob,
                           scope_name="encoder2")
-    encoder_hiddens_op_2 = encoder_2.build_graph(tf.expand_dims(self.predicted_mask_probs_op_1, 3))
+    encoder_hiddens_op_2 = encoder_2.build_graph(tf.expand_dims(self.inputs_op_1, 3))
     decoder_2 = DeconvDecoder(keep_prob=self.keep_prob,
                             output_shape=self.input_dims,
                             scope_name="decoder2")

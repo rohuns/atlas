@@ -635,6 +635,7 @@ class CascadeATLASModel(ATLASModel):
                                       dtype=tf.uint8,
                                       name="predicted_masks1")
 
+    self.inputs_op_1 = tf.boolean_mask(tf.expand_dims(self.inputs_op, 3),self.predicted_masks_op_1)
     encoder_2 = ConvEncoder(input_shape=self.input_dims,
                           keep_prob=self.keep_prob,
                           scope_name="encoder2")

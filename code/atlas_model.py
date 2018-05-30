@@ -511,7 +511,8 @@ class ATLASModel(object):
           train_dice = self.calculate_dice_coefficient(sess,
                                                        train_input_paths,
                                                        train_target_mask_paths,
-                                                       "train")
+                                                       "train",
+                                                       num_samples=self.FLAGS.train_num_samples)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"train dice_coefficient: {train_dice}")
@@ -524,7 +525,8 @@ class ATLASModel(object):
           dev_dice = self.calculate_dice_coefficient(sess,
                                                      dev_input_paths,
                                                      dev_target_mask_paths,
-                                                     "dev")
+                                                     "dev",
+                                                     num_samples=self.FLAGS.dev_num_samples)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"dev dice_coefficient: {dev_dice}")
@@ -635,7 +637,7 @@ class CascadeATLASModel(ATLASModel):
                                       dtype=tf.uint8,
                                       name="predicted_masks1")
     
-    self.inputs_op_1 = tf.cast(self.predicted_masks_op_1, dtype = tf.float32)
+    self.inputs_op_1 = self.inputs_op * tf.cast(self.predicted_masks_op_1, dtype = tf.float32)
     assert(self.input_dims == self.inputs_op_1.get_shape().as_list()[1:])
     encoder_2 = ConvEncoder(input_shape=self.input_dims,
                           keep_prob=self.keep_prob,
@@ -672,15 +674,14 @@ class CascadeATLASModel(ATLASModel):
       #                               name="ce")
 
       weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
-      loss = weighted_ce_with_logits(logits=self.logits_op,
+      loss = weighted_ce_with_logits(logits=self.logits_op_1,
                                      targets=self.target_masks_op,
-                                     pos_weight=100.0,
-                                     name="ce")
-
-                                      # + weighted_ce_with_logits(logits=self.logits_op,
-                                      # targets=self.target_masks_op,
-                                      # pos_weight=1/100.0,
-                                      # name="ce2")
+                                     pos_weight=1000.0,
+                                     name="ce")+\
+              weighted_ce_with_logits(logits=self.logits_op,
+                                      targets=self.target_masks_op,
+                                      pos_weight=100.0,
+                                      name="ce2")
 
       self.loss = tf.reduce_mean(loss)  # scalar mean across batch
 

@@ -387,7 +387,7 @@ class ATLASModel(object):
                 input_path,
                 target_mask_path_list) in enumerate(zipped_masks):
         dice_coefficient = utils.dice_coefficient(predicted_mask, target_mask)
-        
+
         if dice_coefficient >= 0.0:
           dice_coefficient_total += dice_coefficient
           num_examples += 1
@@ -511,8 +511,7 @@ class ATLASModel(object):
           train_dice = self.calculate_dice_coefficient(sess,
                                                        train_input_paths,
                                                        train_target_mask_paths,
-                                                       "train",
-                                                       plot=True)
+                                                       "train")
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"train dice_coefficient: {train_dice}")

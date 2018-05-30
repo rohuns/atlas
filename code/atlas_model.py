@@ -709,13 +709,13 @@ class CascadeATLASModel2(ATLASModel):
                             output_shape=self.input_dims,
                             scope_name="decoder1")
     # Only squeezes the last dimension (do not squeeze the batch dimension)
-    self.logits_op_1 = tf.squeeze(decoder.build_graph(encoder_hiddens_op), axis=3)
-    self.predicted_mask_probs_op_1 = tf.sigmoid(self.logits_op_1,
+    self.logits_op = tf.squeeze(decoder.build_graph(encoder_hiddens_op), axis=3)
+    self.predicted_mask_probs_op = tf.sigmoid(self.logits_op,
                                               name="predicted_mask_probs1")
-    self.predicted_masks_op_1 = tf.cast(self.predicted_mask_probs_op_1 > 0.5,
+    self.predicted_masks_op = tf.cast(self.predicted_mask_probs_op > 0.5,
                                       dtype=tf.uint8,
                                       name="predicted_masks1")
-    self.inputs_op_1 = tf.boolean_mask(tf.expand_dims(self.inputs_op, 3),self.predicted_masks_op_1)
+    self.inputs_op_1 = tf.boolean_mask(tf.expand_dims(self.inputs_op, 3),self.predicted_masks_op)
     
     encoder_2 = ConvEncoder(input_shape=self.input_dims,
                           keep_prob=self.keep_prob,
@@ -725,10 +725,10 @@ class CascadeATLASModel2(ATLASModel):
                             output_shape=self.input_dims,
                             scope_name="decoder2")
     # Only squeezes the last dimension (do not squeeze the batch dimension)
-    self.logits_op= tf.squeeze(decoder_2.build_graph(encoder_hiddens_op_2), axis=3)
-    self.predicted_mask_probs_op = tf.sigmoid(self.logits_op,
+    self.logits_op_2 = tf.squeeze(decoder_2.build_graph(encoder_hiddens_op_2), axis=3)
+    self.predicted_mask_probs_op_2 = tf.sigmoid(self.logits_op_2,
                                               name="predicted_mask_probs")
-    self.predicted_masks_op = tf.cast(self.predicted_mask_probs_op > 0.5,
+    self.predicted_masks_op_2 = tf.cast(self.predicted_mask_probs_op_2 > 0.5,
                                       dtype=tf.uint8,
                                       name="predicted_masks")
 

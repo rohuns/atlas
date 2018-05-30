@@ -84,7 +84,7 @@ tf.app.flags.DEFINE_string("split_type", "by_slice",
 tf.app.flags.DEFINE_float("dropout", 0.15,
                           "Sets the fraction of units randomly dropped on "
                           "non-recurrent connections.")
-tf.app.flags.DEFINE_float("learning_rate", 0.001, "Sets the learning rate.")
+tf.app.flags.DEFINE_float("learning_rate", 0.0005, "Sets the learning rate.")
 tf.app.flags.DEFINE_float("max_gradient_norm", 5.0,
                           "Clips the gradients to this norm.")
 tf.app.flags.DEFINE_integer("num_epochs", None,

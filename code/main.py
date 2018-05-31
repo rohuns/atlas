@@ -100,6 +100,8 @@ tf.app.flags.DEFINE_integer("train_num_samples", None,
                             "entire training set.")
 tf.app.flags.DEFINE_float("loss_weight", 100.0,
                             "Sets the weight for loss calculation.")
+tf.app.flags.DEFINE_string("modelone_dir", "",
+                           "Sets model one for cascade")
 
 # Dev
 tf.app.flags.DEFINE_integer("dev_num_samples", None,

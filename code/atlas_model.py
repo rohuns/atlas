@@ -696,3 +696,198 @@ class CascadeOne(ATLASModel):
       self.loss = tf.reduce_mean(loss)  # scalar mean across batch
       # Adds a summary to write loss to TensorBoard
       tf.summary.scalar("loss", self.loss)
+
+def initialize_model(sess, model, train_dir, expect_exists=False):
+  """
+  Initializes the model from {train_dir}.
+
+  Inputs:
+  - sess: A TensorFlow Session object.
+  - model: An ATLASModel object.
+  - train_dir: A Python str that represents the relative path to train dir
+    e.g. "../experiments/001".
+  - expect_exists: If True, throw an error if no checkpoint is found;
+    otherwise, initialize fresh model if no checkpoint is found.
+  """
+  ckpt = tf.train.get_checkpoint_state(train_dir)
+  v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
+  if (ckpt and (tf.gfile.Exists(ckpt.model_checkpoint_path)
+      or tf.gfile.Exists(v2_path))):
+    print(f"Reading model parameters from {ckpt.model_checkpoint_path}")
+    model.saver.restore(sess, ckpt.model_checkpoint_path)
+  else:
+    if expect_exists:
+      raise Exception(f"There is no saved checkpoint at {train_dir}")
+    else:
+      print(f"There is no saved checkpoint at {train_dir}. Creating model "
+            f"with fresh parameters.")
+      sess.run(tf.global_variables_initializer())
+
+
+class CascadeTwo(ATLASModel):
+  def __init__(self, FLAGS):
+    """
+    Initializes the ATLAS model.
+
+    Inputs:
+    - FLAGS: A _FlagValuesWrapper object.
+    """
+    self.FLAGS = FLAGS
+
+    with tf.variable_scope("CascadeTwo"):
+      self.add_placeholders()
+      self.build_graph()
+      self.add_loss()
+
+    # Defines the trainable parameters, gradient, gradient norm, and clip by
+    # gradient norm
+    params = tf.trainable_variables()
+    gradients = tf.gradients(self.loss, params)
+    self.gradient_norm = tf.global_norm(gradients)
+    clipped_gradients, _ = tf.clip_by_global_norm(gradients,
+                                                  FLAGS.max_gradient_norm)
+    self.param_norm = tf.global_norm(params)
+
+    # Defines optimizer and updates; {self.updates} needs to be fetched in
+    # sess.run to do a gradient update
+    self.global_step_op = tf.Variable(0, name="global_step", trainable=False)
+    opt = tf.train.AdamOptimizer(learning_rate=FLAGS.learning_rate)
+    self.updates = opt.apply_gradients(zip(clipped_gradients, params),
+                                       global_step=self.global_step_op)
+
+    # Adds a summary to write examples of images to TensorBoard
+    utils.add_summary_image_triplet(self.inputs_op,
+                                    self.target_masks_op,
+                                    self.predicted_masks_op,
+                                    num_images=self.FLAGS.num_summary_images)
+
+    # Defines savers (for checkpointing) and summaries (for tensorboard)
+    self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.keep)
+    self.summaries = tf.summary.merge_all()
+
+  def train(self,
+            sess,
+            train_input_paths,
+            train_target_mask_paths,
+            dev_input_paths,
+            dev_target_mask_paths):
+    """
+    Defines the training loop.
+
+    Inputs:
+    - sess: A TensorFlow Session object.
+    - {train,dev}_{input_paths,target_mask_paths}: A list of Python strs
+      that represent pathnames to input image files and target mask files.
+    """
+    params = tf.trainable_variables()
+    num_params = sum(map(lambda t: np.prod(tf.shape(t.value()).eval()), params))
+
+    model_one = CascadeOne(self.FLAGS)
+    restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
+    ckpt = tf.train.get_checkpoint_state(self.FLAGS.modelone_dir)
+    v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
+    restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
+    #initialize_model(sess, model_one, self.FLAGS.modelone_dir, expect_exists=True)
+
+    # We will keep track of exponentially-smoothed loss
+    exp_loss = None
+
+    # Checkpoint management.
+    # We keep one latest checkpoint, and one best checkpoint (early stopping)
+    checkpoint_path = os.path.join(self.FLAGS.train_dir, "qa.ckpt")
+    best_dev_dice_coefficient = None
+
+    # For TensorBoard
+    summary_writer = tf.summary.FileWriter(self.FLAGS.train_dir, sess.graph)
+
+    epoch = 0
+    num_epochs = self.FLAGS.num_epochs
+    while num_epochs == None or epoch < num_epochs:
+      epoch += 1
+
+      # Loops over batches
+      sbg = SliceBatchGenerator(train_input_paths,
+                                train_target_mask_paths,
+                                self.FLAGS.batch_size,
+                                shape=(self.FLAGS.slice_height,
+                                       self.FLAGS.slice_width),
+                                num_samples = self.FLAGS.train_num_samples,
+                                use_fake_target_masks=self.FLAGS.use_fake_target_masks)
+      num_epochs_str = str(num_epochs) if num_epochs != None else "indefinite"
+      for batch in tqdm(sbg.get_batch(),
+                        desc=f"Epoch {epoch}/{num_epochs_str}",
+                        total=sbg.get_num_batches()):
+        # Runs training iteration
+        masks = self.get_predicted_masks_for_batch(sess, batch)
+        batch.inputs_batch *= masks
+
+        loss, global_step, param_norm, grad_norm =\
+          self.run_train_iter(sess, batch, summary_writer)
+
+        # Updates exponentially-smoothed loss
+        if not exp_loss:  # first iter
+          exp_loss = loss
+        else:
+          exp_loss = 0.99 * exp_loss + 0.01 * loss
+
+        # Sometimes prints info
+        if global_step % self.FLAGS.print_every == 0:
+          logging.info(
+            f"epoch {epoch}, "
+            f"global_step {global_step}, "
+            f"loss {loss}, "
+            f"exp_loss {exp_loss}, "
+            f"grad norm {grad_norm}, "
+            f"param norm {param_norm}")
+
+        # Sometimes saves model
+        if (global_step % self.FLAGS.save_every == 0
+            or global_step == sbg.get_num_batches()):
+          self.saver.save(sess, checkpoint_path, global_step=global_step)
+
+        # Sometimes evaluates model on dev loss, train F1/EM and dev F1/EM
+        if global_step % self.FLAGS.eval_every == 0:
+          # Logs loss for entire dev set to TensorBoard
+          dev_loss = self.calculate_loss(sess,
+                                         dev_input_paths,
+                                         dev_target_mask_paths,
+                                         "dev",
+                                         self.FLAGS.dev_num_samples)
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"dev_loss {dev_loss}")
+          utils.write_summary(dev_loss,
+                              "dev/loss",
+                              summary_writer,
+                              global_step)
+
+          # Logs dice coefficient on train set to TensorBoard
+          train_dice = self.calculate_dice_coefficient(sess,
+                                                       train_input_paths,
+                                                       train_target_mask_paths,
+                                                       "train",
+                                                       num_samples=self.FLAGS.train_num_samples)
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"train dice_coefficient: {train_dice}")
+          utils.write_summary(train_dice,
+                              "train/dice",
+                              summary_writer,
+                              global_step)
+
+          # Logs dice coefficient on dev set to TensorBoard
+          dev_dice = self.calculate_dice_coefficient(sess,
+                                                     dev_input_paths,
+                                                     dev_target_mask_paths,
+                                                     "dev",
+                                                     num_samples=self.FLAGS.dev_num_samples)
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"dev dice_coefficient: {dev_dice}")
+          utils.write_summary(dev_dice,
+                              "dev/dice",
+                              summary_writer,
+                              global_step)
+      # end for batch in sbg.get_batch
+    # end while num_epochs == 0 or epoch < num_epochs
+    sys.stdout.flush()

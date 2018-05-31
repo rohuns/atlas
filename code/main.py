@@ -98,6 +98,8 @@ tf.app.flags.DEFINE_integer("train_num_samples", None,
                             "Sets the number of samples to be used for "
                             "training one epoch. None means train on "
                             "entire training set.")
+tf.app.flags.DEFINE_float("loss_weight", 100.0,
+                            "Sets the weight for loss calculation.")
 
 # Dev
 tf.app.flags.DEFINE_integer("dev_num_samples", None,

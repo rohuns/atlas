@@ -184,7 +184,7 @@ def setup_train_dev_split(FLAGS):
   if FLAGS.cv_type == "loocv":
     FLAGS.p = 1
   elif FLAGS.p == None:
-    FLAGS.p = math.floor(0.3 * n)
+    FLAGS.p = math.floor(0.7 * n)
   # else: it's been set manually
 
   train_input_paths = []
@@ -256,7 +256,7 @@ def setup_train_dev_split(FLAGS):
 
     slice_paths = glob.glob(os.path.join(prefix, input_paths_regex),
                             recursive=True)
-    
+
     random.shuffle(slice_paths)
     input_paths = train_input_paths
     if FLAGS.input_regex == None:

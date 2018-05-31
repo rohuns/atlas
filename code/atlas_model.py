@@ -311,6 +311,7 @@ class ATLASModel(object):
     sbg = SliceBatchGenerator(input_paths,
                               target_mask_paths,
                               self.FLAGS.batch_size,
+                              False, #only for dev loss
                               num_samples=num_samples,
                               shape=(self.FLAGS.slice_height,
                                      self.FLAGS.slice_width),
@@ -369,9 +370,12 @@ class ATLASModel(object):
     dice_coefficient_total = 0.
     num_examples = 0
 
+    rotate = self.FLAGS.rotate if dataset=="train" else False
+
     sbg = SliceBatchGenerator(input_paths,
                               target_mask_paths,
                               self.FLAGS.batch_size,
+                              rotate,
                               shape=(self.FLAGS.slice_height,
                                      self.FLAGS.slice_width),
                               use_fake_target_masks=self.FLAGS.use_fake_target_masks)
@@ -457,6 +461,7 @@ class ATLASModel(object):
       sbg = SliceBatchGenerator(train_input_paths,
                                 train_target_mask_paths,
                                 self.FLAGS.batch_size,
+                                self.FLAGS.rotate,
                                 shape=(self.FLAGS.slice_height,
                                        self.FLAGS.slice_width),
                                 use_fake_target_masks=self.FLAGS.use_fake_target_masks)

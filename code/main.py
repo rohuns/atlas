@@ -107,8 +107,11 @@ tf.app.flags.DEFINE_string("model_name", "ATLASModel",
                            "atlas_model.py.")
 tf.app.flags.DEFINE_integer("slice_height", 232, "Sets the image height.")
 tf.app.flags.DEFINE_integer("slice_width", 196, "Sets the image width.")
+tf.app.flags.DEFINE_boolean("rotate", False, "Whether data should be augmented for rotations")
 
 FLAGS = tf.app.flags.FLAGS
+
+if FLAGS.rotate: FLAGS.slice_height = 196 #crop the image
 os.environ["CUDA_VISIBLE_DEVICES"] = str(FLAGS.gpu)
 
 

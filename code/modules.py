@@ -103,7 +103,7 @@ class ConvEncoder(NeuralNetwork):
       conv2 = self.conv2d_relu(drop1, filter_shape=[5, 5, 8, 16], scope_name="conv2")  # (116, 98, 16)
       pool2 = self.maxpool2d(conv2, scope_name="pool2")  # (58, 49, 16)
       drop2 = self.dropout(pool2, keep_prob=self.keep_prob, scope_name="drop2")
-      drop2 = tf.reshape(drop2, shape=[-1, 58*49*16])  # (45472,)
+      drop2 = tf.reshape(drop2, shape=[-1, int(self.input_shape[0]/4)*int(self.input_shape[1]/4)*16])  # (45472,) = 58*49*16
       fc1 = self.fc(drop2, output_shape=1024, scope_name="fc1")
       drop3 = self.dropout(fc1, keep_prob=self.keep_prob, scope_name="drop3")
       fc2 = self.fc(drop3, output_shape=256, scope_name="fc2")
@@ -122,9 +122,9 @@ class DeconvDecoder(NeuralNetwork):
     with tf.variable_scope(self.scope_name):
       fc1 = self.fc(input, output_shape=1024, scope_name="fc1")
       drop1 = self.dropout(fc1, keep_prob=self.keep_prob, scope_name="drop1")
-      fc2 = self.fc(drop1, output_shape=58*49*16, scope_name="fc2")
+      fc2 = self.fc(drop1, output_shape=int(self.output_shape[0]/4)*int(self.output_shape[1]/4)*16, scope_name="fc2")
       drop2 = self.dropout(fc2, keep_prob=self.keep_prob, scope_name="drop2")
-      drop2 = tf.reshape(drop2, shape=[-1, 58, 49, 16])
+      drop2 = tf.reshape(drop2, shape=[-1, int(self.output_shape[0]/4), int(self.output_shape[1]/4), 16])
       up1 = self.upsample(drop2, scope_name="up1", factor=[2, 2])  # (116, 98, 16)
       deconv1 = self.deconv2d(up1, filter_shape=[5, 5], num_outputs=8, scope_name="deconv1")  # (116, 98, 8)
       up2 = self.upsample(deconv1, scope_name="up2", factor=[2, 2])

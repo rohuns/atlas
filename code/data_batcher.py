@@ -41,6 +41,7 @@ class SliceBatchGenerator(object):
                input_path_lists,
                target_mask_path_lists,
                batch_size,
+               rotate,
                max_num_refill_batches=1000,
                num_samples=None,
                shape=(197, 233),
@@ -69,6 +70,8 @@ class SliceBatchGenerator(object):
       ignored and all masks are all 0s. This option might be useful to sanity
       check new models before training on the real dataset.
     """
+    self.rotations = 4 if rotate else 1
+    self.rotation_angle = 360/self.rotations
     self._input_path_lists = input_path_lists
     self._target_mask_path_lists = target_mask_path_lists
     self._batch_size = batch_size
@@ -79,7 +82,7 @@ class SliceBatchGenerator(object):
       self._input_path_lists = self._input_path_lists[:self._num_samples]
       self._target_mask_path_lists = self._target_mask_path_lists[:self._num_samples]
     self._pointer = 0
-    self._order = list(range(len(self._input_path_lists)))
+    self._order = list(range(len(self._input_path_lists)*self.rotations))
 
     # When the batch_size does not even divide the number of input paths,
     # fill the last batch with randomly selected paths
@@ -96,7 +99,7 @@ class SliceBatchGenerator(object):
     """
     Refills {self._batches}.
     """
-    if self._pointer >= len(self._input_path_lists):
+    if self._pointer >= len(self._input_path_lists)*self.rotations:
       return
 
     examples = []  # A Python list of (input, target_mask) tuples
@@ -114,21 +117,25 @@ class SliceBatchGenerator(object):
     start_idx, end_idx = self._pointer, self._pointer + self._max_num_refill_batches
     path_indices = self._order[start_idx:end_idx]
     input_path_lists = [
-      self._input_path_lists[path_idx] for path_idx in path_indices]
+      self._input_path_lists[path_idx%self.rotations] for path_idx in path_indices]
     target_mask_path_lists = [
-      self._target_mask_path_lists[path_idx] for path_idx in path_indices]
+      self._target_mask_path_lists[path_idx%self.rotations] for path_idx in path_indices]
     zipped_path_lists = zip(input_path_lists, target_mask_path_lists)
+
+    #tells what type of rotation is applied 0 = none, 1 = 90, 2 = 180, 3 = 270
+    rotation_type = [path_idx%len(self._input_path_lists) for path_idx in path_indices]
 
     # Updates self._pointer for the next call to {self.refill_batches}
     self._pointer += self._max_num_refill_batches
 
-    for input_path_list, target_mask_path_list in zipped_path_lists:
+    for index, (input_path_list, target_mask_path_list) in enumerate(zipped_path_lists):
       if self._use_fake_target_masks:
         input = Image.open(input_path_list[0]).convert("L")
+        input = input.rotate(rotation_type[index]*self.rotation_angle)
         # Image.resize expects (width, height) order
         examples.append((
           # np.asarray(input.resize(self._shape[::-1], Image.NEAREST)),
-          np.asarray(input.crop((0, 0) + self._shape[::-1])),
+          np.asarray(input.crop((0, 0) + self._shape[::-1])), # might need to fix this 
           np.zeros(self._shape),
           input_path_list[0],
           "fake_target_mask"
@@ -137,6 +144,7 @@ class SliceBatchGenerator(object):
         # Assumes {input_path_list} is a list with length 1;
         # opens input, resizes it, converts to a numpy array
         input = Image.open(input_path_list[0]).convert("L")
+        input.rotate(rotation_type[index]*self.rotation_angle)
         # input = input.resize(self._shape[::-1], Image.NEAREST)
         input = input.crop((0, 0) + self._shape[::-1])
         input = np.asarray(input) / 255.0
@@ -157,6 +165,9 @@ class SliceBatchGenerator(object):
           lambda target_mask: (np.asarray(target_mask)) / 255.0,
           target_mask_list))
         target_mask = np.minimum(np.sum(target_mask_list, axis=0), 1.0)
+        #rotate the target mask the appropriate number of times
+        for i in range(rotation_type[index]):
+          target_mask = np.rot90(target_mask)
 
         # Image.resize expects (width, height) order
         examples.append((
@@ -206,4 +217,4 @@ class SliceBatchGenerator(object):
     Returns the number of batches.
     """
     # The -1 then +1 accounts for the remainder batch.
-    return int((len(self._input_path_lists) - 1) / self._batch_size) + 1
+    return int((len(self._input_path_lists)*self.rotations - 1) / self._batch_size) + 1

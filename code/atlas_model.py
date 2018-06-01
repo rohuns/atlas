@@ -886,7 +886,7 @@ class CascadeTwo(ATLASModel):
                      target_mask_paths,
                      dataset,
                      modelone
-                     num_samples=None,
+                     num_samples=None
                      ):
     """
     Calculates the loss for a dataset, represented by a list of {input_paths}

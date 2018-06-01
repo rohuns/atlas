@@ -782,11 +782,11 @@ class CascadeTwo(ATLASModel):
     params = tf.trainable_variables()
     num_params = sum(map(lambda t: np.prod(tf.shape(t.value()).eval()), params))
 
-    model_one = CascadeOne(self.FLAGS)
-    restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
-    ckpt = tf.train.get_checkpoint_state(self.FLAGS.modelone_dir)
-    v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
-    restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
+    # model_one = CascadeOne(self.FLAGS)
+    # restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
+    # ckpt = tf.train.get_checkpoint_state(self.FLAGS.modelone_dir)
+    # v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
+    # restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
     #initialize_model(sess, model_one, self.FLAGS.modelone_dir, expect_exists=True)
 
     # We will keep track of exponentially-smoothed loss
@@ -818,7 +818,7 @@ class CascadeTwo(ATLASModel):
                         desc=f"Epoch {epoch}/{num_epochs_str}",
                         total=sbg.get_num_batches()):
         # Runs training iteration
-        masks = self.get_predicted_masks_for_batch(sess, batch)
+        masks = np.ones(batch.inputs_batch.shape)#self.get_predicted_masks_for_batch(sess, batch)
         batch.inputs_batch *= masks
 
         loss, global_step, param_norm, grad_norm =\

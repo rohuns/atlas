@@ -70,9 +70,11 @@ class SliceBatchGenerator(object):
       ignored and all masks are all 0s. This option might be useful to sanity
       check new models before training on the real dataset.
     """
+    print (num_samples, "num_samples")
     self.rotations = 4 if rotate else 1
     self.rotation_angle = 360/self.rotations
     self._input_path_lists = input_path_lists
+    print (len(input_path_lists), "length of paths")
     self._target_mask_path_lists = target_mask_path_lists
     self._batch_size = batch_size
     self._batches = []
@@ -83,6 +85,8 @@ class SliceBatchGenerator(object):
       self._target_mask_path_lists = self._target_mask_path_lists[:self._num_samples]
     self._pointer = 0
     self._order = list(range(len(self._input_path_lists)*self.rotations))
+
+    print (max(self._order), "max in order")
 
     # When the batch_size does not even divide the number of input paths,
     # fill the last batch with randomly selected paths
@@ -117,13 +121,13 @@ class SliceBatchGenerator(object):
     start_idx, end_idx = self._pointer, self._pointer + self._max_num_refill_batches
     path_indices = self._order[start_idx:end_idx]
     input_path_lists = [
-      self._input_path_lists[path_idx%self.rotations] for path_idx in path_indices]
+      self._input_path_lists[path_idx%len(self._input_path_lists)] for path_idx in path_indices]
     target_mask_path_lists = [
-      self._target_mask_path_lists[path_idx%self.rotations] for path_idx in path_indices]
+      self._target_mask_path_lists[path_idx %len(self._input_path_lists)] for path_idx in path_indices]
     zipped_path_lists = zip(input_path_lists, target_mask_path_lists)
 
     #tells what type of rotation is applied 0 = none, 1 = 90, 2 = 180, 3 = 270
-    rotation_type = [path_idx%len(self._input_path_lists) for path_idx in path_indices]
+    rotation_type = [int(path_idx/len(self._input_path_lists)) for path_idx in path_indices]
 
     # Updates self._pointer for the next call to {self.refill_batches}
     self._pointer += self._max_num_refill_batches

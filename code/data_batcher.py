@@ -77,7 +77,7 @@ class SliceBatchGenerator(object):
     self._batch_size = batch_size
     self._batches = []
     self._max_num_refill_batches = max_num_refill_batches
-    self._num_samples = num_samples
+    self._num_samples = 10
     if self._num_samples != None:
       self._input_path_lists = self._input_path_lists[:self._num_samples]
       self._target_mask_path_lists = self._target_mask_path_lists[:self._num_samples]
@@ -96,6 +96,26 @@ class SliceBatchGenerator(object):
       random.shuffle(self._order)
 
 
+  def createMap(self,img, mask):
+    dic = dict()
+    for i in range(img.shape[0]):
+      for j in range(img.shape[1]):
+        val = img[i][j]
+        if val in dic:
+          dic[val].add(mask[i][j])
+        else:
+          a = set()
+          a.add(mask[i][j])
+          dic[val] = a
+    return dic
+
+  def checkMap(self, a, b):
+    for key in a:
+      if not b[key] == a[key]:
+        print (a[key])
+        print (b[key])
+        return False
+    return True
   def refill_batches(self):
     """
     Refills {self._batches}.
@@ -125,6 +145,7 @@ class SliceBatchGenerator(object):
 
     #tells what type of rotation is applied 0 = none, 1 = 90, 2 = 180, 3 = 270
     rotation_type = [int(path_idx/len(self._input_path_lists)) for path_idx in path_indices]
+    print (rotation_type)
 
     # Updates self._pointer for the next call to {self.refill_batches}
     self._pointer += self._max_num_refill_batches
@@ -145,10 +166,13 @@ class SliceBatchGenerator(object):
         # Assumes {input_path_list} is a list with length 1;
         # opens input, resizes it, converts to a numpy array
         input = Image.open(input_path_list[0]).convert("L")
-        input.rotate(rotation_type[index]*self.rotation_angle)
         # input = input.resize(self._shape[::-1], Image.NEAREST)
         input = input.crop((0, 0) + self._shape[::-1])
+        pre_rotate = np.asarray(input)
+        input = input.rotate(rotation_type[index]*self.rotation_angle)
+        post_rotate = np.asarray(input)
         input = np.asarray(input) / 255.0
+
 
         # Assumes {target_mask_path_list} is a list of lists, where the outer
         # list has length 1 and the inner list has length >= 1;
@@ -167,8 +191,19 @@ class SliceBatchGenerator(object):
           target_mask_list))
         target_mask = np.minimum(np.sum(target_mask_list, axis=0), 1.0)
         #rotate the target mask the appropriate number of times
-        for i in range(rotation_type[index]):
-          target_mask = np.rot90(target_mask)
+        pre_t_rotate = target_mask
+        target_mask = np.rot90(target_mask, rotation_type[index])
+        post_t_rotate = target_mask
+
+
+
+        a = self.createMap(pre_rotate, pre_t_rotate)
+        b = self.createMap(post_rotate, post_t_rotate)
+
+        #if not self.checkMap(a,b):
+
+
+        print (self.checkMap(a,b),rotation_type[index], "-----------------------------")
 
         # Image.resize expects (width, height) order
         examples.append((

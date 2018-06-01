@@ -885,7 +885,7 @@ class CascadeTwo(ATLASModel):
                      input_paths,
                      target_mask_paths,
                      dataset,
-                     modelone
+                     modelone=None,
                      num_samples=None
                      ):
     """

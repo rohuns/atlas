@@ -691,37 +691,11 @@ class CascadeOne(ATLASModel):
       weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
       loss = weighted_ce_with_logits(logits=self.logits_op,
                                      targets=self.target_masks_op,
-                                     pos_weight=self.FLAGS.loss_weight,
+                                     pos_weight=64.0,
                                      name="ce")
       self.loss = tf.reduce_mean(loss)  # scalar mean across batch
       # Adds a summary to write loss to TensorBoard
       tf.summary.scalar("loss", self.loss)
-
-def initialize_model(sess, model, train_dir, expect_exists=False):
-  """
-  Initializes the model from {train_dir}.
-
-  Inputs:
-  - sess: A TensorFlow Session object.
-  - model: An ATLASModel object.
-  - train_dir: A Python str that represents the relative path to train dir
-    e.g. "../experiments/001".
-  - expect_exists: If True, throw an error if no checkpoint is found;
-    otherwise, initialize fresh model if no checkpoint is found.
-  """
-  ckpt = tf.train.get_checkpoint_state(train_dir)
-  v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
-  if (ckpt and (tf.gfile.Exists(ckpt.model_checkpoint_path)
-      or tf.gfile.Exists(v2_path))):
-    print(f"Reading model parameters from {ckpt.model_checkpoint_path}")
-    model.saver.restore(sess, ckpt.model_checkpoint_path)
-  else:
-    if expect_exists:
-      raise Exception(f"There is no saved checkpoint at {train_dir}")
-    else:
-      print(f"There is no saved checkpoint at {train_dir}. Creating model "
-            f"with fresh parameters.")
-      sess.run(tf.global_variables_initializer())
 
 
 class CascadeTwo(ATLASModel):
@@ -782,11 +756,11 @@ class CascadeTwo(ATLASModel):
     params = tf.trainable_variables()
     num_params = sum(map(lambda t: np.prod(tf.shape(t.value()).eval()), params))
 
-    # model_one = CascadeOne(self.FLAGS)
-    # restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
-    # ckpt = tf.train.get_checkpoint_state(self.FLAGS.modelone_dir)
-    # v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
-    # restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
+    model_one = CascadeOne(self.FLAGS)
+    restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
+    ckpt = tf.train.get_checkpoint_state(self.FLAGS.modelone_dir)
+    v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
+    restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
     #initialize_model(sess, model_one, self.FLAGS.modelone_dir, expect_exists=True)
 
     # We will keep track of exponentially-smoothed loss
@@ -818,7 +792,7 @@ class CascadeTwo(ATLASModel):
                         desc=f"Epoch {epoch}/{num_epochs_str}",
                         total=sbg.get_num_batches()):
         # Runs training iteration
-        masks = np.ones(batch.inputs_batch.shape)#self.get_predicted_masks_for_batch(sess, batch)
+        masks = model_one.get_predicted_masks_for_batch(sess, batch)
         batch.inputs_batch *= masks
 
         loss, global_step, param_norm, grad_norm =\
@@ -891,3 +865,14 @@ class CascadeTwo(ATLASModel):
       # end for batch in sbg.get_batch
     # end while num_epochs == 0 or epoch < num_epochs
     sys.stdout.flush()
+
+  def add_loss(self):
+    with tf.variable_scope("loss"):
+      weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
+      loss = weighted_ce_with_logits(logits=self.logits_op,
+                                     targets=self.target_masks_op,
+                                     pos_weight=32.0,
+                                     name="ce")
+      self.loss = tf.reduce_mean(loss)  # scalar mean across batch
+      # Adds a summary to write loss to TensorBoard
+      tf.summary.scalar("loss", self.loss)

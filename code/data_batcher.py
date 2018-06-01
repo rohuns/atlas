@@ -70,11 +70,9 @@ class SliceBatchGenerator(object):
       ignored and all masks are all 0s. This option might be useful to sanity
       check new models before training on the real dataset.
     """
-    print (num_samples, "num_samples")
     self.rotations = 4 if rotate else 1
     self.rotation_angle = 360/self.rotations
     self._input_path_lists = input_path_lists
-    print (len(input_path_lists), "length of paths")
     self._target_mask_path_lists = target_mask_path_lists
     self._batch_size = batch_size
     self._batches = []
@@ -86,7 +84,6 @@ class SliceBatchGenerator(object):
     self._pointer = 0
     self._order = list(range(len(self._input_path_lists)*self.rotations))
 
-    print (max(self._order), "max in order")
 
     # When the batch_size does not even divide the number of input paths,
     # fill the last batch with randomly selected paths

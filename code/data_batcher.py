@@ -47,7 +47,7 @@ class SliceBatchGenerator(object):
                max_num_refill_batches=1000,
                num_samples=None,
                shape=(197, 233),
-               shuffle=False,
+               shuffle=True,
                use_fake_target_masks=False):
     """
     Initializes a SliceBatchGenerator.

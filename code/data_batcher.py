@@ -11,7 +11,8 @@ class Batch(object):
                inputs_batch,
                target_masks_batch,
                input_paths_batch,
-               target_mask_path_lists_batch):
+               target_mask_path_lists_batch,
+               rotation_num):
     """
     Initializes a Batch.
 
@@ -34,6 +35,7 @@ class Batch(object):
     self.batch_size = len(self.inputs_batch)
     self.input_paths_batch = input_paths_batch
     self.target_mask_path_lists_batch = target_mask_path_lists_batch
+    self.rotation_num = rotation_num
 
 
 class SliceBatchGenerator(object):
@@ -205,10 +207,13 @@ class SliceBatchGenerator(object):
       (inputs_batch, target_masks_batch, input_paths_batch,
        target_mask_path_lists_batch) =\
          zip(*examples[batch_start_idx:batch_start_idx+self._batch_size])
+      lst = rotation_type[batch_start_idx:batch_start_idx+self._batch_size]
+      rotation_num = max(set(lst), key=lst.count)
       self._batches.append((np.asarray(inputs_batch),
                             np.asarray(target_masks_batch),
                             input_paths_batch,
-                            target_mask_path_lists_batch))
+                            target_mask_path_lists_batch,
+                            rotation_num))
 
 
   def get_batch(self):

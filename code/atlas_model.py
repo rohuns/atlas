@@ -481,6 +481,13 @@ class ATLASModel(object):
           exp_loss = 0.99 * exp_loss + 0.01 * loss
 
         # Sometimes prints info
+
+        if global_step % 50 == 0:
+          #write the rotation_num to tensorboard
+          utils.write_summary(batch.rotation_num,
+                              "train/rotation_num",
+                              summary_writer,
+                              global_step)
         if global_step % self.FLAGS.print_every == 0:
           logging.info(
             f"epoch {epoch}, "

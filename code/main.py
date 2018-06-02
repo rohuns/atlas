@@ -111,7 +111,7 @@ tf.app.flags.DEFINE_boolean("rotate", False, "Whether data should be augmented f
 
 FLAGS = tf.app.flags.FLAGS
 
-if FLAGS.rotate: FLAGS.slice_height = 196 #crop the image
+#if FLAGS.rotate: FLAGS.slice_height = 196 #crop the image
 os.environ["CUDA_VISIBLE_DEVICES"] = str(FLAGS.gpu)
 
 

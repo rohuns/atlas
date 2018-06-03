@@ -146,7 +146,7 @@ class SliceBatchGenerator(object):
     zipped_path_lists = zip(input_path_lists, target_mask_path_lists)
 
     #tells what type of rotation is applied 0 = none, 1 = 90, 2 = 180, 3 = 270
-    rotation_type = [int(path_idx/len(self._input_path_lists)) for path_idx in path_indices]
+    rotation_type = [int(path_idx/len(self._input_path_lists))*2 for path_idx in path_indices] 
 
     # Updates self._pointer for the next call to {self.refill_batches}
     self._pointer += self._max_num_refill_batches
@@ -202,13 +202,13 @@ class SliceBatchGenerator(object):
         ))
       if len(examples) >= self._batch_size * self._max_num_refill_batches:
         break
-
     for batch_start_idx in range(0, len(examples), self._batch_size):
       (inputs_batch, target_masks_batch, input_paths_batch,
        target_mask_path_lists_batch) =\
          zip(*examples[batch_start_idx:batch_start_idx+self._batch_size])
       lst = rotation_type[batch_start_idx:batch_start_idx+self._batch_size]
       rotation_num = max(set(lst), key=lst.count)
+
       self._batches.append((np.asarray(inputs_batch),
                             np.asarray(target_masks_batch),
                             input_paths_batch,
@@ -243,4 +243,4 @@ class SliceBatchGenerator(object):
     Returns the number of batches.
     """
     # The -1 then +1 accounts for the remainder batch.
-    return int((len(self._input_path_lists)*self.rotations - 1) / self._batch_size) + 1
+    return int((len(self._input_path_lists)*self.rotations - 1) / self._batch_size)

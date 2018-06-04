@@ -207,15 +207,51 @@ def main(_):
       initialize_model(sess, atlas_model, FLAGS.train_dir, expect_exists=True)
 
       # Shows examples from the dev set
-      _, _, dev_input_paths, dev_target_mask_paths =\
+      _, _, _, _, test_input_paths, test_target_mask_paths =\
         setup_train_dev_split(FLAGS)
-      dev_dice = atlas_model.calculate_dice_coefficient(sess,
-                                                        dev_input_paths,
-                                                        dev_target_mask_paths,
-                                                        "dev",
-                                                        num_samples=1000,
+      test_dice = atlas_model.calculate_dice_coefficient(sess,
+                                                        test_input_paths,
+                                                        test_target_mask_paths,
+                                                        "test",
+                                                        num_samples=8657,
                                                         plot=True)
-      logging.info(f"dev dice_coefficient: {dev_dice}")
+      logging.info(f"test dice_coefficient: {test_dice}")
+
+      test_dice, test_lfp, test_avd, test_ppv =\
+            self.calculate_evals(sess,
+                                test_input_paths,
+                                test_target_mask_paths,
+                                "test",
+                                num_samples=8657,
+                                plot=True)
+      logging.info(f"epoch {epoch}, "
+                   f"global_step {global_step}, "
+                   f"test dice_coefficient: {test_dice}")
+      logging.info(f"epoch {epoch}, "
+                   f"global_step {global_step}, "
+                   f"test lfp: {test_lfp}")
+      logging.info(f"epoch {epoch}, "
+                   f"global_step {global_step}, "
+                   f"test avd: {test_avd}")
+      logging.info(f"epoch {epoch}, "
+                   f"global_step {global_step}, "
+                   f"test ppv: {train_ppv}")
+      utils.write_summary(test_dice,
+                          "test/dice",
+                          summary_writer,
+                          global_step)
+      utils.write_summary(test_lfp,
+                          "test/lfp",
+                          summary_writer,
+                          global_step)
+      utils.write_summary(test_avd,
+                          "test/avd",
+                          summary_writer,
+                          global_step)
+      utils.write_summary(test_ppv,
+                              "test/ppv",
+                              summary_writer,
+                              global_step)
 
 
 if __name__ == "__main__":

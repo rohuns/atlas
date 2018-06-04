@@ -166,7 +166,9 @@ def setup_train_dev_split(FLAGS):
       split["train_input_paths"],
       split["train_target_mask_paths"],
       split["dev_input_paths"],
-      split["dev_target_mask_paths"]
+      split["dev_target_mask_paths"],
+      split["test_input_paths"],
+      split["test_target_mask_paths"]
     )
 
   if FLAGS.split_type == "by_patient":
@@ -176,6 +178,8 @@ def setup_train_dev_split(FLAGS):
   elif FLAGS.split_type == "by_slice":
     # find . -type f -wholename "*Site*/*/*/*_t1w_deface_stx/*.jpg" | wc -l
     n = 43281
+    n_test = math.ceil(n * 0.2)
+    n -= n_test
   elif FLAGS.split_type == "by_site":
     n = 9
   else:
@@ -184,7 +188,7 @@ def setup_train_dev_split(FLAGS):
   if FLAGS.cv_type == "loocv":
     FLAGS.p = 1
   elif FLAGS.p == None:
-    FLAGS.p = math.floor(0.7 * n)
+    FLAGS.p = math.floor(0.75 * n)
   # else: it's been set manually
 
   train_input_paths = []
@@ -258,7 +262,8 @@ def setup_train_dev_split(FLAGS):
 
     slice_paths = glob.glob(os.path.join(prefix, input_paths_regex),
                             recursive=True)
-
+    test_slice_paths = slice_paths[:n_test]
+    slice_paths = slice_paths[n_test:]
     random.shuffle(slice_paths)
     input_paths = train_input_paths
     if FLAGS.input_regex == None:
@@ -272,6 +277,13 @@ def setup_train_dev_split(FLAGS):
                            "{FLAGS.split_type} is by_slice.")
         else:
           input_paths.append([slice_path])
+
+      for idx, slice_path in enumerate(test_slice_paths):
+        if FLAGS.use_volumetric:
+          raise ValueError("Cannot {FLAGS.use_volumetric} when "
+                           "{FLAGS.split_type} is by_slice.")
+        else:
+          test_input_paths.append([slice_path])
     else:
       for slice_path in slice_paths:
         train_input_paths.append([slice_path])
@@ -289,6 +301,10 @@ def setup_train_dev_split(FLAGS):
                       dev_target_mask_paths,
                       prefix,
                       FLAGS.merge_target_masks)
+  _add_paths_to_lists(test_input_paths,
+                      test_target_mask_paths,
+                      prefix,
+                      FLAGS.merge_target_masks)
 
   # Saves a record of split as a .json file in {train_dir}
   with open(os.path.join(FLAGS.train_dir, "split.json"), "w") as fout:
@@ -296,12 +312,15 @@ def setup_train_dev_split(FLAGS):
       "train_input_paths": train_input_paths,
       "train_target_mask_paths": train_target_mask_paths,
       "dev_input_paths": dev_input_paths,
-      "dev_target_mask_paths": dev_target_mask_paths
+      "dev_target_mask_paths": dev_target_mask_paths,
+      "test_input_paths": test_input_paths,
+      "test_target_mask_paths": test_target_mask_paths
     }
     json.dump(split, fout)
 
   logging.info(f"Split contains {len(train_input_paths)} training examples...")
   logging.info(f"Split contains {len(dev_input_paths)} dev examples...")
+  logging.info(f"Split contains {len(test_input_paths)} test examples...")
 
 
   return (
@@ -309,4 +328,6 @@ def setup_train_dev_split(FLAGS):
     train_target_mask_paths,
     dev_input_paths,
     dev_target_mask_paths,
+    test_input_paths,
+    test_target_mask_paths
   )

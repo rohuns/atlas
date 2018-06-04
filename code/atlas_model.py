@@ -334,14 +334,14 @@ class ATLASModel(object):
     return loss
 
 
-  def calculate_dice_coefficient(self,
-                                 sess,
-                                 input_paths,
-                                 target_mask_paths,
-                                 dataset,
-                                 num_samples=100,
-                                 plot=False,
-                                 print_to_screen=False):
+  def calculate_evals(self,
+                     sess,
+                     input_paths,
+                     target_mask_paths,
+                     dataset,
+                     num_samples=100,
+                     plot=False,
+                     print_to_screen=False):
     """
     Calculates the dice coefficient score for a dataset, represented by a
     list of {input_paths} and {target_mask_paths}.
@@ -367,6 +367,9 @@ class ATLASModel(object):
     tic = time.time()
 
     dice_coefficient_total = 0.
+    lfp_total = 0.
+    avd_total = 0.
+    ppv_total = 0.
     num_examples = 0
 
     sbg = SliceBatchGenerator(input_paths,
@@ -376,6 +379,7 @@ class ATLASModel(object):
                                      self.FLAGS.slice_width),
                               use_fake_target_masks=self.FLAGS.use_fake_target_masks)
     for batch in sbg.get_batch():
+      saved_img = False
       predicted_masks = self.get_predicted_masks_for_batch(sess, batch)
 
       zipped_masks = zip(predicted_masks,
@@ -386,17 +390,21 @@ class ATLASModel(object):
                 target_mask,
                 input_path,
                 target_mask_path_list) in enumerate(zipped_masks):
-        dice_coefficient = utils.dice_coefficient(predicted_mask, target_mask)
+        evals = utils.evals(predicted_mask, target_mask)
 
-        if dice_coefficient >= 0.0:
+        if evals[0] >= 0.0:
+          dice_coefficient, false_positives, abs_vol_diff, pos_pred_val = evals
           dice_coefficient_total += dice_coefficient
+          lfp_total += false_positives
+          avd_total += abs_vol_diff
+          ppv_total += pos_pred_val
           num_examples += 1
 
           if print_to_screen:
             # Whee! We predicted at least one lesion pixel!
             logging.info(f"Dice coefficient of valid example {num_examples}: "
                          f"{dice_coefficient}")
-          if plot:
+          if plot and not saved_img:
             f, axarr = plt.subplots(1, 2)
             f.suptitle(input_path)
             axarr[0].imshow(predicted_mask)
@@ -407,6 +415,7 @@ class ATLASModel(object):
             if not os.path.exists(examples_dir):
               os.makedirs(examples_dir)
             f.savefig(os.path.join(examples_dir, str(num_examples).zfill(4)))
+            saved_img = True
 
         if num_samples != None and num_examples >= num_samples:
           break
@@ -415,10 +424,18 @@ class ATLASModel(object):
         break
 
     dice_coefficient_mean = dice_coefficient_total / num_examples
+    lfp_mean = lfp_total / num_examples
+    avd_mean = avd_total / num_examples
+    ppv_mean = ppv_total / num_examples
 
     toc = time.time()
     logging.info(f"Calculating dice coefficient took {toc-tic} sec.")
-    return dice_coefficient_mean
+    return (
+      dice_coefficient_mean,
+      lfp_mean,
+      avd_mean,
+      ppv_mean
+    )
 
 
   def train(self,
@@ -426,7 +443,8 @@ class ATLASModel(object):
             train_input_paths,
             train_target_mask_paths,
             dev_input_paths,
-            dev_target_mask_paths):
+            dev_target_mask_paths,
+            _, __):
     """
     Defines the training loop.
 
@@ -508,30 +526,75 @@ class ATLASModel(object):
                               global_step)
 
           # Logs dice coefficient on train set to TensorBoard
-          train_dice = self.calculate_dice_coefficient(sess,
-                                                       train_input_paths,
-                                                       train_target_mask_paths,
-                                                       "train",
-                                                       num_samples=self.FLAGS.train_num_samples)
+          train_dice, train_lfp, train_avd, train_ppv =\
+            self.calculate_evals(sess,
+                                train_input_paths,
+                                train_target_mask_paths,
+                                "train",
+                                num_samples=self.FLAGS.train_num_samples)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"train dice_coefficient: {train_dice}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"train lfp: {train_lfp}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"train avd: {train_avd}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"train ppv: {train_ppv}")
+                       
           utils.write_summary(train_dice,
                               "train/dice",
                               summary_writer,
                               global_step)
+          utils.write_summary(train_lfp,
+                              "train/lfp",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(train_avd,
+                              "train/avd",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(train_ppv,
+                              "train/ppv",
+                              summary_writer,
+                              global_step)
 
           # Logs dice coefficient on dev set to TensorBoard
-          dev_dice = self.calculate_dice_coefficient(sess,
-                                                     dev_input_paths,
-                                                     dev_target_mask_paths,
-                                                     "dev",
-                                                     num_samples=self.FLAGS.dev_num_samples)
+          dev_dice, dev_lfp, dev_avd, dev_ppv =\
+            self.calculate_evals(sess,
+                                dev_input_paths,
+                                dev_target_mask_paths,
+                                "dev",
+                                num_samples=self.FLAGS.dev_num_samples)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"dev dice_coefficient: {dev_dice}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"dev lfp: {dev_lfp}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"dev avd: {dev_avd}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"dev ppv: {dev_ppv}")
           utils.write_summary(dev_dice,
                               "dev/dice",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(dev_lfp,
+                              "dev/lfp",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(dev_avd,
+                              "dev/avd",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(dev_ppv,
+                              "dev/ppv",
                               summary_writer,
                               global_step)
       # end for batch in sbg.get_batch
@@ -744,7 +807,8 @@ class CascadeTwo(ATLASModel):
             train_input_paths,
             train_target_mask_paths,
             dev_input_paths,
-            dev_target_mask_paths):
+            dev_target_mask_paths,
+            _, __):
     """
     Defines the training loop.
 
@@ -837,32 +901,75 @@ class CascadeTwo(ATLASModel):
                               global_step)
 
           # Logs dice coefficient on train set to TensorBoard
-          train_dice = self.calculate_dice_coefficient(sess,
-                                                       train_input_paths,
-                                                       train_target_mask_paths,
-                                                       "train",
-                                                       modelone=model_one,
-                                                       num_samples=self.FLAGS.train_num_samples)
+          # Logs dice coefficient on train set to TensorBoard
+          train_dice, train_lfp, train_avd, train_ppv =\
+            self.calculate_evals(sess,
+                                train_input_paths,
+                                train_target_mask_paths,
+                                "train",
+                                num_samples=self.FLAGS.train_num_samples)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"train dice_coefficient: {train_dice}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"train lfp: {train_lfp}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"train avd: {train_avd}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"train ppv: {train_ppv}")
           utils.write_summary(train_dice,
                               "train/dice",
                               summary_writer,
                               global_step)
+          utils.write_summary(train_lfp,
+                              "train/lfp",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(train_avd,
+                              "train/avd",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(train_ppv,
+                              "train/ppv",
+                              summary_writer,
+                              global_step)
 
           # Logs dice coefficient on dev set to TensorBoard
-          dev_dice = self.calculate_dice_coefficient(sess,
-                                                     dev_input_paths,
-                                                     dev_target_mask_paths,
-                                                     "dev",
-                                                     modelone=model_one,
-                                                     num_samples=self.FLAGS.dev_num_samples)
+          dev_dice, dev_lfp, dev_avd, dev_ppv =\
+            self.calculate_evals(sess,
+                                dev_input_paths,
+                                dev_target_mask_paths,
+                                "dev",
+                                num_samples=self.FLAGS.dev_num_samples)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"dev dice_coefficient: {dev_dice}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"dev lfp: {dev_lfp}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"dev avd: {dev_avd}")
+          logging.info(f"epoch {epoch}, "
+                       f"global_step {global_step}, "
+                       f"dev ppv: {dev_ppv}")
           utils.write_summary(dev_dice,
                               "dev/dice",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(dev_lfp,
+                              "dev/lfp",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(dev_avd,
+                              "dev/avd",
+                              summary_writer,
+                              global_step)
+          utils.write_summary(dev_ppv,
+                              "dev/ppv",
                               summary_writer,
                               global_step)
       # end for batch in sbg.get_batch
@@ -942,15 +1049,14 @@ class CascadeTwo(ATLASModel):
     logging.info(f"Calculating loss took {toc-tic} sec.")
     return loss
 
-  def calculate_dice_coefficient(self,
-                                 sess,
-                                 input_paths,
-                                 target_mask_paths,
-                                 dataset,
-                                 num_samples=100,
-                                 modelone=None,
-                                 plot=False,
-                                 print_to_screen=False):
+  def calculate_evals(self,
+                   sess,
+                   input_paths,
+                   target_mask_paths,
+                   dataset,
+                   num_samples=100,
+                   plot=False,
+                   print_to_screen=False):
     """
     Calculates the dice coefficient score for a dataset, represented by a
     list of {input_paths} and {target_mask_paths}.
@@ -976,6 +1082,9 @@ class CascadeTwo(ATLASModel):
     tic = time.time()
 
     dice_coefficient_total = 0.
+    lfp_total = 0.
+    avd_total = 0.
+    ppv_total = 0.
     num_examples = 0
 
     sbg = SliceBatchGenerator(input_paths,
@@ -985,9 +1094,10 @@ class CascadeTwo(ATLASModel):
                                      self.FLAGS.slice_width),
                               use_fake_target_masks=self.FLAGS.use_fake_target_masks)
     for batch in sbg.get_batch():
+      saved_img = False
       masks = modelone.get_predicted_masks_for_batch(sess, batch)
       batch.inputs_batch *= masks
-      
+
       predicted_masks = self.get_predicted_masks_for_batch(sess, batch)
 
       zipped_masks = zip(predicted_masks,
@@ -998,17 +1108,21 @@ class CascadeTwo(ATLASModel):
                 target_mask,
                 input_path,
                 target_mask_path_list) in enumerate(zipped_masks):
-        dice_coefficient = utils.dice_coefficient(predicted_mask, target_mask)
+        evals = utils.evals(predicted_mask, target_mask)
 
-        if dice_coefficient >= 0.0:
+        if evals[0] >= 0.0:
+          dice_coefficient, false_positives, abs_vol_diff, pos_pred_val = evals
           dice_coefficient_total += dice_coefficient
+          lfp_total += false_positives
+          avd_total += abs_vol_diff
+          ppv_total += pos_pred_val
           num_examples += 1
 
           if print_to_screen:
             # Whee! We predicted at least one lesion pixel!
             logging.info(f"Dice coefficient of valid example {num_examples}: "
                          f"{dice_coefficient}")
-          if plot:
+          if plot and not saved_img:
             f, axarr = plt.subplots(1, 2)
             f.suptitle(input_path)
             axarr[0].imshow(predicted_mask)
@@ -1019,6 +1133,7 @@ class CascadeTwo(ATLASModel):
             if not os.path.exists(examples_dir):
               os.makedirs(examples_dir)
             f.savefig(os.path.join(examples_dir, str(num_examples).zfill(4)))
+            saved_img = True
 
         if num_samples != None and num_examples >= num_samples:
           break
@@ -1027,7 +1142,15 @@ class CascadeTwo(ATLASModel):
         break
 
     dice_coefficient_mean = dice_coefficient_total / num_examples
+    lfp_mean = lfp_total / num_examples
+    avd_mean = avd_total / num_examples
+    ppv_mean = ppv_total / num_examples
 
     toc = time.time()
     logging.info(f"Calculating dice coefficient took {toc-tic} sec.")
-    return dice_coefficient_mean
+    return (
+      dice_coefficient_mean,
+      lfp_mean,
+      avd_mean,
+      ppv_mean
+    )

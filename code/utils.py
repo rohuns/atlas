@@ -1,12 +1,20 @@
 import numpy as np
 import tensorflow as tf
 
-def dice_coefficient(predicted_mask, target_mask):
+def evals(predicted_mask, target_mask):
   tp = np.sum(np.logical_and(predicted_mask, target_mask))
+  p = np.sum(predicted_mask)
+  p_actual = np.sum(target_mask)
   fp_fn = np.sum(np.logical_xor(predicted_mask, target_mask))
-  if (2 * tp + fp_fn) == 0: return -1  # mask is entirely 0
+  fp = np.sum(np.logical_and(predicted_mask, np.logical_not(target_mask)))
+
+  if (2 * tp + fp_fn) == 0: (-1)  # mask is entirely 0
+  
   dice = 2 * tp / (2 * tp + fp_fn)
-  return dice
+  ppv = tp / p
+  avd = abs(p - p_actual)
+
+  return (dice, fp, avd, ppv)
 
 def get_block_sizes(resnet_size):
   """

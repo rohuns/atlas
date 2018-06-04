@@ -29,6 +29,14 @@ file_unet <- "~/Desktop/log-1.txt" # Baseline UNet - Dice 0.06
 # CASCADED MODEL ===============================================================
 file_cascade_1 <- "~/Desktop/231N/cascadelog.txt" # First attempt. Loss is going
 # down but very quickly at the start and is then stuck. Dice 0
+file_cascade_2 <- "~/Desktop/231N/cascadelosslog.txt" # Loss using weights 1000 
+# and 100
+file_cascade_pt1 <- "~/Desktop/231N/cascadeonelog.txt"
+overfit_cascade_1 <- "~/final-proj-atlas/experiments/test_cascade_2/log.txt" # 1000
+overfit_cascade_2 <- "~/final-proj-atlas/experiments/test_cascade_3/log.txt" #100
+overfit_cascade_3 <- "~/final-proj-atlas/experiments/test_cascade_4/log.txt" #10
+
+cascade_full <- "~/Desktop/231N/cascadetwolog.txt"
 # ==============================================================================
 ```
 
@@ -40,8 +48,7 @@ file_cascade_1 <- "~/Desktop/231N/cascadelog.txt" # First attempt. Loss is going
   * 2) Train two separate models to (1) see if they work alone and (2) see if a different cascade works
 
 ```{r}
-file <- file_cascade_1
-
+file <- cascade_full
 data <- 
   file %>% 
   read_csv(
@@ -87,6 +94,7 @@ dice_data <-
 train_loss_data %>% 
   ggplot(aes(iter, loss)) +
   geom_line() +
+  scale_x_continuous(limits = c(0,200)) +
   labs(
     x = "Iterations",
     y = "Loss",

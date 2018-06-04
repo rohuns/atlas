@@ -184,13 +184,15 @@ def setup_train_dev_split(FLAGS):
   if FLAGS.cv_type == "loocv":
     FLAGS.p = 1
   elif FLAGS.p == None:
-    FLAGS.p = math.floor(0.3 * n)
+    FLAGS.p = math.floor(0.7 * n)
   # else: it's been set manually
 
   train_input_paths = []
   train_target_mask_paths = []
   dev_input_paths = []
   dev_target_mask_paths = []
+  test_input_paths = []
+  test_target_mask_paths = []
 
   prefix = os.path.join(FLAGS.data_dir, "ATLAS_R1.1")
 

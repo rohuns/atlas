@@ -691,7 +691,7 @@ class CascadeOne(ATLASModel):
       weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
       loss = weighted_ce_with_logits(logits=self.logits_op,
                                      targets=self.target_masks_op,
-                                     pos_weight=64.0,
+                                     pos_weight=self.FLAGS.loss_weight,
                                      name="ce")
       self.loss = tf.reduce_mean(loss)  # scalar mean across batch
       # Adds a summary to write loss to TensorBoard
@@ -874,7 +874,7 @@ class CascadeTwo(ATLASModel):
       weighted_ce_with_logits = tf.nn.weighted_cross_entropy_with_logits
       loss = weighted_ce_with_logits(logits=self.logits_op,
                                      targets=self.target_masks_op,
-                                     pos_weight=16.0,
+                                     pos_weight=self.FLAGS.loss_weight,
                                      name="ce")
       self.loss = tf.reduce_mean(loss)  # scalar mean across batch
       # Adds a summary to write loss to TensorBoard

@@ -206,6 +206,14 @@ def main(_):
       # Loads the most recent model
       initialize_model(sess, atlas_model, FLAGS.train_dir, expect_exists=True)
 
+      model_one = None
+      if FLAGS.model_name == "CascadeTwo":
+        model_one = CascadeOne(self.FLAGS)
+        restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
+        ckpt = tf.train.get_checkpoint_state(self.FLAGS.modelone_dir)
+        v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
+        restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
+
       # Shows examples from the dev set
       _, _, _, _, test_input_paths, test_target_mask_paths =\
         setup_train_dev_split(FLAGS)
@@ -216,6 +224,7 @@ def main(_):
                                 test_target_mask_paths,
                                 "test",
                                 num_samples=8657,
+                                modelone=model_one
                                 plot=True)
       logging.info(f"epoch {epoch}, "
                    f"global_step {global_step}, "

@@ -340,6 +340,7 @@ class ATLASModel(object):
                      target_mask_paths,
                      dataset,
                      num_samples=100,
+                     modelone=None,
                      plot=False,
                      print_to_screen=False):
     """
@@ -907,7 +908,8 @@ class CascadeTwo(ATLASModel):
                                 train_input_paths,
                                 train_target_mask_paths,
                                 "train",
-                                num_samples=self.FLAGS.train_num_samples)
+                                num_samples=self.FLAGS.train_num_samples,
+			                          modelone=model_one)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"train dice_coefficient: {train_dice}")
@@ -943,7 +945,8 @@ class CascadeTwo(ATLASModel):
                                 dev_input_paths,
                                 dev_target_mask_paths,
                                 "dev",
-                                num_samples=self.FLAGS.dev_num_samples)
+                                num_samples=self.FLAGS.dev_num_samples,
+                                modelone=model_one)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"dev dice_coefficient: {dev_dice}")
@@ -1055,7 +1058,7 @@ class CascadeTwo(ATLASModel):
                    target_mask_paths,
                    dataset,
                    num_samples=100,
-                   modelone=None
+                   modelone=None,
                    plot=False,
                    print_to_screen=False):
     """

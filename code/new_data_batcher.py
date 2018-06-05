@@ -69,7 +69,7 @@ class SliceBatchGenerator(object):
       ignored and all masks are all 0s. This option might be useful to sanity
       check new models before training on the real dataset.
     """
-    self.rotations = 2 if rotate else 1
+    self.rotations = 4 if rotate else 1
     self.rotation_angle = 360/self.rotations
     self._input_path_lists = input_path_lists
     self._target_mask_path_lists = target_mask_path_lists
@@ -143,7 +143,7 @@ class SliceBatchGenerator(object):
     zipped_path_lists = zip(input_path_lists, target_mask_path_lists)
 
     #tells what type of rotation is applied 0 = none, 1 = 90, 2 = 180, 3 = 270
-    rotation_type = [int(path_idx/len(self._input_path_lists))*2 for path_idx in path_indices] 
+    rotation_type = [int(path_idx/len(self._input_path_lists)) for path_idx in path_indices] 
 
     # Updates self._pointer for the next call to {self.refill_batches}
     self._pointer += self._max_num_refill_batches
@@ -165,7 +165,8 @@ class SliceBatchGenerator(object):
         # opens input, resizes it, converts to a numpy array
         input = Image.open(input_path_list[0]).convert("L")
         # input = input.resize(self._shape[::-1], Image.NEAREST)
-        input = input.crop((0, 0) + self._shape[::-1])
+        #input = input.crop((0, 0) + self._shape[::-1])
+        input = input.crop((0, 18, 196, 214))
         input = input.rotate(rotation_type[index]*self.rotation_angle)
         input = np.asarray(input) / 255.0
 
@@ -178,7 +179,7 @@ class SliceBatchGenerator(object):
           target_mask_path_list[0]))
         target_mask_list = list(map(
           # lambda target_mask: target_mask.resize(self._shape[::-1], Image.NEAREST),
-          lambda target_mask: target_mask.crop((0, 0) + self._shape[::-1]),
+          lambda target_mask: target_mask.crop((0, 18, 196, 214)),
           target_mask_list))
 
         target_mask_list = list(map(

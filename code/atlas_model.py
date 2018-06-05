@@ -9,7 +9,7 @@ import time
 from tqdm import tqdm
 
 import utils
-from data_batcher import SliceBatchGenerator
+from new_data_batcher import SliceBatchGenerator
 from modules import ConvEncoder, DeconvDecoder, UNetEncoder, UNetDecoder
 
 

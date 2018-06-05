@@ -209,13 +209,6 @@ def main(_):
       # Shows examples from the dev set
       _, _, _, _, test_input_paths, test_target_mask_paths =\
         setup_train_dev_split(FLAGS)
-      test_dice = atlas_model.calculate_dice_coefficient(sess,
-                                                        test_input_paths,
-                                                        test_target_mask_paths,
-                                                        "test",
-                                                        num_samples=8657,
-                                                        plot=True)
-      logging.info(f"test dice_coefficient: {test_dice}")
 
       test_dice, test_lfp, test_avd, test_ppv =\
             self.calculate_evals(sess,

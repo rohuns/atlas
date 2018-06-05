@@ -1055,6 +1055,7 @@ class CascadeTwo(ATLASModel):
                    target_mask_paths,
                    dataset,
                    num_samples=100,
+                   modelone=None
                    plot=False,
                    print_to_screen=False):
     """

@@ -219,12 +219,12 @@ def main(_):
         setup_train_dev_split(FLAGS)
 
       test_dice, test_lfp, test_avd, test_ppv =\
-            self.calculate_evals(sess,
+            atlas_model.calculate_evals(sess,
                                 test_input_paths,
                                 test_target_mask_paths,
                                 "test",
                                 num_samples=8657,
-                                modelone=model_one
+                                modelone=model_one,
                                 plot=True)
       logging.info(f"epoch {epoch}, "
                    f"global_step {global_step}, "

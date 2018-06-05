@@ -208,9 +208,10 @@ def main(_):
 
       model_one = None
       if FLAGS.model_name == "CascadeTwo":
-        model_one = CascadeOne(self.FLAGS)
+        print("BAD")
+        model_one = CascadeOne(FLAGS)
         restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
-        ckpt = tf.train.get_checkpoint_state(self.FLAGS.modelone_dir)
+        ckpt = tf.train.get_checkpoint_state(FLAGS.modelone_dir)
         v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
         restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
 
@@ -219,41 +220,33 @@ def main(_):
         setup_train_dev_split(FLAGS)
 
       test_dice, test_lfp, test_avd, test_ppv =\
-            self.calculate_evals(sess,
+            atlas_model.calculate_evals(sess,
                                 test_input_paths,
                                 test_target_mask_paths,
                                 "test",
                                 num_samples=8657,
-                                modelone=model_one
-                                plot=True)
-      logging.info(f"epoch {epoch}, "
-                   f"global_step {global_step}, "
-                   f"test dice_coefficient: {test_dice}")
-      logging.info(f"epoch {epoch}, "
-                   f"global_step {global_step}, "
-                   f"test lfp: {test_lfp}")
-      logging.info(f"epoch {epoch}, "
-                   f"global_step {global_step}, "
-                   f"test avd: {test_avd}")
-      logging.info(f"epoch {epoch}, "
-                   f"global_step {global_step}, "
-                   f"test ppv: {train_ppv}")
-      utils.write_summary(test_dice,
-                          "test/dice",
-                          summary_writer,
-                          global_step)
-      utils.write_summary(test_lfp,
-                          "test/lfp",
-                          summary_writer,
-                          global_step)
-      utils.write_summary(test_avd,
-                          "test/avd",
-                          summary_writer,
-                          global_step)
-      utils.write_summary(test_ppv,
-                              "test/ppv",
-                              summary_writer,
-                              global_step)
+                                modelone=model_one,
+                                plot=False)
+      logging.info(f"test dice_coefficient: {test_dice}")
+      logging.info(f"test lfp: {test_lfp}")
+      logging.info(f"test avd: {test_avd}")
+      logging.info(f"test ppv: {test_ppv}")
+      # utils.write_summary(test_dice,
+      #                     "test/dice",
+      #                     summary_writer,
+      #                     global_step)
+      # utils.write_summary(test_lfp,
+      #                     "test/lfp",
+      #                     summary_writer,
+      #                     global_step)
+      # utils.write_summary(test_avd,
+      #                     "test/avd",
+      #                     summary_writer,
+      #                     global_step)
+      # utils.write_summary(test_ppv,
+      #                         "test/ppv",
+      #                         summary_writer,
+      #                         global_step)
 
 
 if __name__ == "__main__":

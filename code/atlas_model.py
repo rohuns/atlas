@@ -822,6 +822,7 @@ class CascadeTwo(ATLASModel):
     num_params = sum(map(lambda t: np.prod(tf.shape(t.value()).eval()), params))
 
     model_one = CascadeOne(self.FLAGS)
+    print ("jere ---------------------------")
     restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
     ckpt = tf.train.get_checkpoint_state(self.FLAGS.modelone_dir)
     v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""

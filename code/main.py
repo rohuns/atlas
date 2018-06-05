@@ -132,6 +132,7 @@ def initialize_model(sess, model, train_dir, expect_exists=False):
   - expect_exists: If True, throw an error if no checkpoint is found;
     otherwise, initialize fresh model if no checkpoint is found.
   """
+  print("in initialize_model")
   ckpt = tf.train.get_checkpoint_state(train_dir)
   v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
   if (ckpt and (tf.gfile.Exists(ckpt.model_checkpoint_path)
@@ -219,14 +220,16 @@ def main(_):
       _, _, _, _, test_input_paths, test_target_mask_paths =\
         setup_train_dev_split(FLAGS)
 
+      print(len(test_input_paths))
+      print(len(test_target_mask_paths))
+
       test_dice, test_lfp, test_avd, test_ppv =\
             atlas_model.calculate_evals(sess,
                                 test_input_paths,
                                 test_target_mask_paths,
                                 "test",
                                 num_samples=8657,
-                                modelone=model_one,
-                                plot=False)
+                                modelone=model_one)
       logging.info(f"test dice_coefficient: {test_dice}")
       logging.info(f"test lfp: {test_lfp}")
       logging.info(f"test avd: {test_avd}")

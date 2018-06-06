@@ -946,7 +946,8 @@ class CascadeTwo(ATLASModel):
                                 dev_input_paths,
                                 dev_target_mask_paths,
                                 "dev",
-                                num_samples=self.FLAGS.dev_num_samples)
+                                num_samples=self.FLAGS.dev_num_samples,
+                                modelone=model_one)
           logging.info(f"epoch {epoch}, "
                        f"global_step {global_step}, "
                        f"dev dice_coefficient: {dev_dice}")

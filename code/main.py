@@ -1,4 +1,4 @@
-import json
+Himport json
 import logging
 import os
 import sys
@@ -132,6 +132,7 @@ def initialize_model(sess, model, train_dir, expect_exists=False):
   - expect_exists: If True, throw an error if no checkpoint is found;
     otherwise, initialize fresh model if no checkpoint is found.
   """
+  print("in initialize_model")
   ckpt = tf.train.get_checkpoint_state(train_dir)
   v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
   if (ckpt and (tf.gfile.Exists(ckpt.model_checkpoint_path)
@@ -216,15 +217,18 @@ def main(_):
         restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
 
       # Shows examples from the dev set
-      _, _, _, _, test_input_paths, test_target_mask_paths =\
+      _, _, dev_input_paths, dev_target_mask_paths, test_input_paths, test_target_mask_paths =\
         setup_train_dev_split(FLAGS)
+
+      print(len(test_input_paths))
+      print(len(test_target_mask_paths))
 
       test_dice, test_lfp, test_avd, test_ppv =\
             atlas_model.calculate_evals(sess,
                                 test_input_paths,
                                 test_target_mask_paths,
                                 "test",
-                                num_samples=8657,
+                                num_samples=len(test_input_paths),
                                 modelone=model_one,
                                 plot=False,
                                 print_to_screen=True

@@ -11,10 +11,11 @@ def evals(predicted_mask, target_mask):
   if (2 * tp + fp_fn) == 0 or p == 0 or p_actual == 0: return (-1,-1,-1,-1)  # mask is entirely 0
   
   dice = 2 * tp / (2 * tp + fp_fn)
-  ppv = tp / p
-  avd = abs(p - p_actual)
+  ppv = (2 * tp) / p
+  avd = abs(p - p_actual) / p_actual
+  lfpr = fp / p
 
-  return (dice, fp, avd, ppv)
+  return (dice, lfpr, avd, ppv)
 
 def get_block_sizes(resnet_size):
   """

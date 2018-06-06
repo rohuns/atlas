@@ -178,7 +178,7 @@ def setup_train_dev_split(FLAGS):
   elif FLAGS.split_type == "by_slice":
     # find . -type f -wholename "*Site*/*/*/*_t1w_deface_stx/*.jpg" | wc -l
     n = 43281
-    n_test = math.ceil(n * 0.2)
+    n_test = 8656 
     n -= n_test
   elif FLAGS.split_type == "by_site":
     n = 9
@@ -188,7 +188,7 @@ def setup_train_dev_split(FLAGS):
   if FLAGS.cv_type == "loocv":
     FLAGS.p = 1
   elif FLAGS.p == None:
-    FLAGS.p = math.floor(0.75 * n)
+    FLAGS.p = 25893
   # else: it's been set manually
 
   train_input_paths = []

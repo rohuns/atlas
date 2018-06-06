@@ -397,7 +397,7 @@ class ATLASModel(object):
           dice_coefficient, false_positives, abs_vol_diff, pos_pred_val = evals
           dice_coefficient_total += dice_coefficient
           lfp_total += false_positives
-          avd_total += abs_vol_diff
+          if (abs_vol_diff != -1): avd_total += abs_vol_diff
           ppv_total += pos_pred_val
           num_examples += 1
 
@@ -1119,7 +1119,7 @@ class CascadeTwo(ATLASModel):
           dice_coefficient, false_positives, abs_vol_diff, pos_pred_val = evals
           dice_coefficient_total += dice_coefficient
           lfp_total += false_positives
-          avd_total += abs_vol_diff
+          if (abs_vol_diff != -1): avd_total += abs_vol_diff
           ppv_total += pos_pred_val
           num_examples += 1
 

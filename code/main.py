@@ -1,4 +1,4 @@
-Himport json
+import json
 import logging
 import os
 import sys
@@ -219,9 +219,6 @@ def main(_):
       # Shows examples from the dev set
       _, _, dev_input_paths, dev_target_mask_paths, test_input_paths, test_target_mask_paths =\
         setup_train_dev_split(FLAGS)
-
-      print(len(test_input_paths))
-      print(len(test_target_mask_paths))
 
       test_dice, test_lfp, test_avd, test_ppv =\
             atlas_model.calculate_evals(sess,

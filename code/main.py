@@ -208,8 +208,8 @@ def main(_):
 
       model_one = None
       if FLAGS.model_name == "CascadeTwo":
-        print("BAD")
-        model_one = CascadeOne(FLAGS)
+        model_one_class = getattr(module, "CascadeOne")
+        model_one = model_one_class(FLAGS)
         restorer_model_one = tf.train.Saver([v for v in tf.global_variables() if "ATLASModel" in v.name])
         ckpt = tf.train.get_checkpoint_state(FLAGS.modelone_dir)
         v2_path = ckpt.model_checkpoint_path + ".index" if ckpt else ""
@@ -226,27 +226,13 @@ def main(_):
                                 "test",
                                 num_samples=8657,
                                 modelone=model_one,
-                                plot=False)
+                                plot=False,
+                                print_to_screen=True
+                                )
       logging.info(f"test dice_coefficient: {test_dice}")
       logging.info(f"test lfp: {test_lfp}")
       logging.info(f"test avd: {test_avd}")
       logging.info(f"test ppv: {test_ppv}")
-      # utils.write_summary(test_dice,
-      #                     "test/dice",
-      #                     summary_writer,
-      #                     global_step)
-      # utils.write_summary(test_lfp,
-      #                     "test/lfp",
-      #                     summary_writer,
-      #                     global_step)
-      # utils.write_summary(test_avd,
-      #                     "test/avd",
-      #                     summary_writer,
-      #                     global_step)
-      # utils.write_summary(test_ppv,
-      #                         "test/ppv",
-      #                         summary_writer,
-      #                         global_step)
 
 
 if __name__ == "__main__":

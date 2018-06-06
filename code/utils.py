@@ -8,7 +8,7 @@ def evals(predicted_mask, target_mask):
   fp_fn = np.sum(np.logical_xor(predicted_mask, target_mask))
   fp = np.sum(np.logical_and(predicted_mask, np.logical_not(target_mask)))
 
-  if (2 * tp + fp_fn) == 0 or p == 0: return (-1,-1,-1,-1)  # mask is entirely 0
+  if (2 * tp + fp_fn) == 0 or p == 0 or p_actual == 0: return (-1,-1,-1,-1)  # mask is entirely 0
   
   dice = 2 * tp / (2 * tp + fp_fn)
   ppv = tp / p

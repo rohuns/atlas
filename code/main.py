@@ -17,7 +17,7 @@ DEFAULT_DATA_DIR = os.path.join(MAIN_DIR, "data")
 EXPERIMENTS_DIR = os.path.join(MAIN_DIR, "experiments")
 
 # General
-tf.app.flags.DEFINE_integer("batch_size", 100, "Sets the batch size.")
+tf.app.flags.DEFINE_integer("batch_size", 32, "Sets the batch size.")
 tf.app.flags.DEFINE_integer("eval_every", 500,
                             "How many iterations to do per calculating the "
                             "dice coefficient on the dev set. This operation "

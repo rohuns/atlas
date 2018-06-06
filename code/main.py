@@ -217,7 +217,7 @@ def main(_):
         restorer_model_one.restore(sess, ckpt.model_checkpoint_path)
 
       # Shows examples from the dev set
-      _, _, _, _, test_input_paths, test_target_mask_paths =\
+      _, _, dev_input_paths, dev_target_mask_paths, test_input_paths, test_target_mask_paths =\
         setup_train_dev_split(FLAGS)
 
       print(len(test_input_paths))
@@ -228,8 +228,9 @@ def main(_):
                                 test_input_paths,
                                 test_target_mask_paths,
                                 "test",
-                                num_samples=8657,
-                                modelone=model_one)
+                                num_samples=len(test_input_paths),
+                                modelone=model_one,
+                                print_to_screen=True)
       logging.info(f"test dice_coefficient: {test_dice}")
       logging.info(f"test lfp: {test_lfp}")
       logging.info(f"test avd: {test_avd}")

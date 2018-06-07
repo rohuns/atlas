@@ -148,7 +148,7 @@ class SliceBatchGenerator(object):
           target_mask_path_list[0]))
         target_mask_list = list(map(
           # lambda target_mask: target_mask.resize(self._shape[::-1], Image.NEAREST),
-          lambda target_mask: target_mask: target_mask.crop((0, 18, 196, 214)),
+          lambda target_mask: target_mask.crop((0, 18, 196, 214)),
           target_mask_list))
 
         target_mask_list = list(map(

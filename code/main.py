@@ -220,20 +220,20 @@ def main(_):
       _, _, dev_input_paths, dev_target_mask_paths, test_input_paths, test_target_mask_paths =\
         setup_train_dev_split(FLAGS)
 
-      test_dice, test_lfp, test_avd, test_ppv =\
+      dev_dice, dev_lfp, dev_avd, dev_ppv =\
             atlas_model.calculate_evals(sess,
-                                test_input_paths,
-                                test_target_mask_paths,
-                                "test",
-                                num_samples=len(test_input_paths),
+                                dev_input_paths,
+                                dev_target_mask_paths,
+                                "dev",
+                                num_samples=len(dev_input_paths),
                                 modelone=model_one,
                                 plot=False,
                                 print_to_screen=True
                                 )
-      logging.info(f"test dice_coefficient: {test_dice}")
-      logging.info(f"test lfp: {test_lfp}")
-      logging.info(f"test avd: {test_avd}")
-      logging.info(f"test ppv: {test_ppv}")
+      logging.info(f"dev dice_coefficient: {dev_dice}")
+      logging.info(f"dev lfp: {dev_lfp}")
+      logging.info(f"dev avd: {dev_avd}")
+      logging.info(f"dev ppv: {dev_ppv}")
 
 
 if __name__ == "__main__":

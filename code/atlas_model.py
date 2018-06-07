@@ -104,6 +104,7 @@ class ATLASModel(object):
       e.g. (100, 233, 197) of 0s and 1s.
     """
     assert(self.input_dims == self.inputs_op.get_shape().as_list()[1:])
+
     encoder = ConvEncoder(input_shape=self.input_dims,
                           keep_prob=self.keep_prob,
                           scope_name="encoder")
